@@ -10,17 +10,43 @@
 </head>
 <body class="app-body">
 <header class="landing-hero">
-  <h1>Find your next home with confidence.</h1>
-  <p>Discover verified rentals, compare neighborhoods, and connect with trusted owners in minutes.</p>
-  <div class="search-bar">
-    <input id="homeCity" type="text" placeholder="Search by city" />
-    <select id="homeStatus"><option value="">Any status</option><option value="Available">Available</option><option value="Rented">Rented</option></select>
-    <input id="homeBudget" type="number" placeholder="Max rent" />
-    <button id="homeSearch" class="btn btn-primary" type="button">Search</button>
-  </div>
-  <div class="actions-row">
+  <nav class="landing-nav glass-panel">
+    <strong class="brand-mark">🏠 Rental Platform</strong>
+    <div class="landing-links">
+      <a href="#">Home</a>
+      <a href="#recommendedGrid">Discover</a>
+      <a href="#newHomesGrid">New homes</a>
+    </div>
     <a class="btn btn-secondary" href="../pages/login.html">Login</a>
-    <a class="btn btn-primary" href="../pages/register.html">Get Started</a>
+  </nav>
+
+  <div class="landing-grid">
+    <div>
+      <span class="hero-chip">✨ Verified listings · Instant responses</span>
+      <h1>Live in a <span>Liquid Glass</span> rental experience.</h1>
+      <p>Discover verified rentals, compare neighborhoods, and connect with trusted owners in minutes through a cleaner, modern, and animated home search.</p>
+
+      <div class="search-bar glass-panel">
+        <input id="homeCity" type="text" placeholder="Search by city" />
+        <select id="homeStatus"><option value="">Any status</option><option value="Available">Available</option><option value="Rented">Rented</option></select>
+        <input id="homeBudget" type="number" placeholder="Max rent" />
+        <button id="homeSearch" class="btn btn-primary" type="button">Search</button>
+      </div>
+
+      <div class="actions-row">
+        <a class="btn btn-primary" href="../pages/register.html">Get Started</a>
+        <a class="btn btn-secondary" href="#recommendedGrid">Explore listings →</a>
+      </div>
+    </div>
+
+    <aside class="hero-preview glass-panel">
+      <p class="hero-preview-label">Featured neighborhood</p>
+      <h3>Downtown Riverside</h3>
+      <p class="property-meta">1,200+ active users viewed this week.</p>
+      <div class="hero-preview-card">
+        <p>"Booked my apartment in 48 hours with complete trust in the owner profile."</p>
+      </div>
+    </aside>
   </div>
 </header>
 
