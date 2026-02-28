@@ -19,52 +19,40 @@ function getFlashStorageKey(scope) {
 }
 
 export function setFlashMessage(message, type = "success", scope = "global") {
-  sessionStorage.setItem(
-    getFlashStorageKey(scope),
-    JSON.stringify({
-      message,
-      type
-    })
-  );
+  sessionStorage.setItem(getFlashStorageKey(scope), JSON.stringify({ message, type }));
+}
+
+function ensureToastStack() {
+  let stack = document.querySelector(".toast-stack");
+  if (!stack) {
+    stack = document.createElement("div");
+    stack.className = "toast-stack";
+    document.body.appendChild(stack);
+  }
+  return stack;
 }
 
 export function showToast(message, type = "success") {
-
+  const stack = ensureToastStack();
   const toast = document.createElement("div");
+  toast.className = `toast ${type === "error" ? "error" : "success"}`;
   toast.textContent = message;
+  stack.appendChild(toast);
 
-  toast.style.position = "fixed";
-  toast.style.top = "20px";
-  toast.style.right = "20px";
-  toast.style.background = type === "error" ? "#dc2626" : "#16a34a";
-  toast.style.color = "#ffffff";
-  toast.style.padding = "12px 16px";
-  toast.style.borderRadius = "8px";
-  toast.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
-  toast.style.zIndex = "9999";
-  toast.style.fontSize = "14px";
-
-  document.body.appendChild(toast);
-
-  // remove after 2 seconds
   setTimeout(() => {
     toast.remove();
-  }, 2000);
+  }, 2800);
 }
 
 export function renderFlashMessage(scope = "global") {
-
   const raw = sessionStorage.getItem(getFlashStorageKey(scope));
   if (!raw) return;
 
   try {
-
     const parsed = JSON.parse(raw);
-
     if (parsed?.message) {
       showToast(parsed.message, parsed.type || "success");
     }
-
   } catch (error) {
     console.error("Invalid flash message payload:", error);
   }

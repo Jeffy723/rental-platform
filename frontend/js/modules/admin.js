@@ -6,42 +6,36 @@ import { listProperties } from "../services/propertyService.js";
 const user = requireUser(["admin"]);
 if (!user) throw new Error("Unauthorized");
 
-console.log("Admin logged in:", user.name);
 renderFlashMessage("dashboard");
 
-async function loadAdminSummary() {
-  const [{ data: users }, { data: properties }] = await Promise.all([
-    getAllUsers(),
-    listProperties()
-  ]);
-
-  const userCountElement = document.getElementById("userCount");
-  const propertyCountElement = document.getElementById("propertyCount");
-  const userTableBody = document.getElementById("userTableBody");
-  if (userCountElement) userCountElement.textContent = String((users || []).length);
-  if (propertyCountElement) propertyCountElement.textContent = String((properties || []).length);
-
-  if (userTableBody) {
-    userTableBody.innerHTML = (users || []).length
-      ? users
-        .map(
-          (row) => `
-          <tr>
-            <td>${row.user_id}</td>
-            <td>${row.name || "-"}</td>
-            <td>${row.email || "-"}</td>
-            <td>${row.role || "-"}</td>
-          </tr>
-        `
-        )
-        .join("")
-      : "<tr><td colspan='4'>No users found.</td></tr>";
-  }
+function statusClass(status) {
+  const value = (status || "").toLowerCase();
+  if (value === "available") return "status-pill status-available";
+  if (value === "rented") return "status-pill status-rented";
+  return "status-pill status-inactive";
 }
 
-// Logout
-const logoutBtn = document.getElementById("logoutBtn");
+async function loadAdminSummary() {
+  const [{ data: users }, { data: properties }] = await Promise.all([getAllUsers(), listProperties()]);
 
-logoutBtn.addEventListener("click", logout);
+  const rowsUsers = users || [];
+  const rowsProperties = properties || [];
 
+  document.getElementById("userCount").textContent = String(rowsUsers.length);
+  document.getElementById("propertyCount").textContent = String(rowsProperties.length);
+  document.getElementById("availableCount").textContent = String(rowsProperties.filter((item) => item.status === "Available").length);
+  document.getElementById("rentedCount").textContent = String(rowsProperties.filter((item) => item.status === "Rented").length);
+
+  const userTableBody = document.getElementById("userTableBody");
+  userTableBody.innerHTML = rowsUsers.length
+    ? rowsUsers.map((row) => `<tr><td>${row.user_id}</td><td>${row.name || "-"}</td><td>${row.email || "-"}</td><td><span class='role-chip'>${row.role || "-"}</span></td></tr>`).join("")
+    : "<tr><td colspan='4'>No users found.</td></tr>";
+
+  const propertyOverviewBody = document.getElementById("propertyOverviewBody");
+  propertyOverviewBody.innerHTML = rowsProperties.length
+    ? rowsProperties.slice(0, 10).map((row) => `<tr><td>${row.property_id}</td><td>${row.title || "-"}</td><td>${row.city || "-"}</td><td><span class='${statusClass(row.status)}'>${row.status || "-"}</span></td><td>${row.rent_amount || 0}</td></tr>`).join("")
+    : "<tr><td colspan='5'>No properties found.</td></tr>";
+}
+
+document.getElementById("logoutBtn").addEventListener("click", logout);
 loadAdminSummary();

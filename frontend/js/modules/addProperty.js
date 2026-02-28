@@ -2,14 +2,24 @@ import { requireUser } from "../core/auth.js";
 import { getOwnerByUserId } from "../services/userService.js";
 import { createProperty, uploadPropertyImage } from "../services/propertyService.js";
 import { validatePropertyPayload } from "../utils/validators.js";
+import { showToast } from "../utils/helpers.js";
 
 const user = requireUser(["owner"]);
 if (!user) throw new Error("Unauthorized");
 
 const form = document.getElementById("propertyForm");
+const imageInput = document.getElementById("propertyImages");
+const galleryPreview = document.getElementById("galleryPreview");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+imageInput.addEventListener("change", () => {
+  const files = Array.from(imageInput.files || []);
+  galleryPreview.innerHTML = files.length
+    ? files.map((file) => `<img src="${URL.createObjectURL(file)}" alt="upload preview" />`).join("")
+    : "";
+});
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
   const payload = {
     title: document.getElementById("title").value.trim(),
@@ -28,48 +38,41 @@ form.addEventListener("submit", async (e) => {
 
   const validation = validatePropertyPayload(payload);
   if (!validation.valid) {
-    alert(validation.errors.join("\n"));
+    showToast(validation.errors.join(", "), "error");
     return;
   }
 
-  try {
-    const { data: ownerData, error: ownerError } = await getOwnerByUserId(user.user_id);
-
-    if (ownerError) {
-      console.error(ownerError);
-      alert("Owner profile not found");
-      return;
-    }
-
-    const ownerId = ownerData.owner_id;
-
-    payload.owner_id = ownerId;
-
-    const { data, error } = await createProperty(payload);
-
-    if (error) {
-      console.error(error);
-      alert("Failed to add property");
-      return;
-    }
-
-    const fileInput = document.getElementById("propertyImage");
-    const selectedFile = fileInput.files[0];
-
-    if (selectedFile) {
-      const imageInsert = await uploadPropertyImage(selectedFile, data.property_id);
-      if (imageInsert.error) {
-        console.error("Property added, image upload failed:", imageInsert.error);
-        alert("Property added, but image upload failed.");
-      }
-    }
-
-    console.log("Property added:", data);
-    alert("Property added successfully!");
-
-    form.reset();
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong");
+  const { data: ownerData, error: ownerError } = await getOwnerByUserId(user.user_id);
+  if (ownerError || !ownerData?.owner_id) {
+    showToast("Please complete owner profile before adding properties", "error");
+    return;
   }
+
+  payload.owner_id = ownerData.owner_id;
+
+  const submitBtn = form.querySelector("button[type='submit']");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Publishing...";
+
+  const { data, error } = await createProperty(payload);
+  if (error || !data) {
+    showToast("Failed to add property", "error");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Publish Property";
+    return;
+  }
+
+  const files = Array.from(imageInput.files || []);
+  for (const file of files) {
+    const uploadResult = await uploadPropertyImage(file, data.property_id);
+    if (uploadResult.error) {
+      console.error("Image upload failed", uploadResult.error);
+    }
+  }
+
+  showToast("Property published successfully", "success");
+  form.reset();
+  galleryPreview.innerHTML = "";
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Publish Property";
 });
