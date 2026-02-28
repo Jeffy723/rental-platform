@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile | Rental Platform</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="app-body">
+  <div class="utility-bar">
+    <a class="btn btn-secondary" data-back-dashboard href="../dashboards/owner.html">← Back to Dashboard</a>
+    <details class="settings-menu">
+      <summary class="btn btn-secondary">⚙️ Settings</summary>
+      <div class="settings-menu-panel">
+        <button class="btn btn-secondary btn-block" type="button" data-theme-toggle>🌙 Dark mode</button>
+      </div>
+    </details>
+  </div>
+
+  <main class="page-shell">
+    <section class="page-card profile-card">
+      <h1 class="section-title">Your Profile</h1>
+      <p class="section-subtitle">Account details for the currently logged-in user.</p>
+      <div id="profileDetails" class="profile-grid"></div>
+      <div class="actions-row">
+        <button id="logoutBtn" class="btn btn-danger" type="button">Logout</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/modules/profile.js"></script>
+  <script type="module" src="../js/modules/themeControls.js"></script>
+</body>
+</html>

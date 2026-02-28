@@ -1,4 +1,4 @@
-import { requireUser, logout } from "../core/auth.js";
+import { requireUser } from "../core/auth.js";
 import { renderFlashMessage, showToast, formatCurrency } from "../utils/helpers.js";
 import { listProperties } from "../services/propertyService.js";
 import { getTenantByUserId, saveTenantProfile } from "../services/userService.js";
@@ -99,5 +99,4 @@ recommendationBox.addEventListener("click", (event) => {
   }
 });
 
-document.getElementById("logoutBtn").addEventListener("click", logout);
 loadTenantSummary();

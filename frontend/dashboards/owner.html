@@ -11,7 +11,12 @@
 </head>
 <body class="app-body">
   <div class="utility-bar">
-    <button class="btn btn-secondary" type="button" data-theme-toggle>🌙 Dark mode</button>
+    <details class="settings-menu">
+      <summary class="btn btn-secondary">⚙️ Settings</summary>
+      <div class="settings-menu-panel">
+        <button class="btn btn-secondary btn-block" type="button" data-theme-toggle>🌙 Dark mode</button>
+      </div>
+    </details>
   </div>
   <main class="dashboard-layout">
     <aside class="sidebar">
@@ -24,8 +29,9 @@
         <a href="../pages/agreements.html">Agreements</a>
         <a href="../pages/payments.html">Payments</a>
         <a href="../pages/maintenance.html">Maintenance</a>
+        <a href="../pages/profile.html">Profile</a>
       </nav>
-      <div class="actions-row"><button id="logoutBtn" class="btn btn-danger" type="button">Logout</button></div>
+      <div class="actions-row"><a class="btn btn-secondary" href="../pages/profile.html">Open Profile</a></div>
     </aside>
 
     <section class="dashboard-shell">

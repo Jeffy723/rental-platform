@@ -1,4 +1,4 @@
-import { requireUser, logout } from "../core/auth.js";
+import { requireUser } from "../core/auth.js";
 import { renderFlashMessage, showToast, formatCurrency } from "../utils/helpers.js";
 import { validatePropertyPayload } from "../utils/validators.js";
 import { getOwnerByUserId, saveOwnerProfile } from "../services/userService.js";
@@ -159,5 +159,4 @@ ownerQuickPropertyForm.addEventListener("submit", async (event) => {
   loadOwnerSummary();
 });
 
-document.getElementById("logoutBtn").addEventListener("click", logout);
 loadOwnerSummary();
