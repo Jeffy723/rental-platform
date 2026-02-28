@@ -40,7 +40,7 @@ async function fetchProperties() {
 
 function renderTable(properties) {
   if (properties.length === 0) {
-    propertyTableBody.innerHTML = "<tr><td colspan='8'>No properties found.</td></tr>";
+    propertyTableBody.innerHTML = "<tr><td colspan='9'>No properties found.</td></tr>";
     return;
   }
 
@@ -55,6 +55,7 @@ function renderTable(properties) {
       return `
         <tr>
           <td>${property.property_id}</td>
+          <td>${property.title || "-"}</td>
           <td>${property.property_type || "-"}</td>
           <td>${property.address || "-"}, ${property.city || "-"}</td>
           <td>${formatCurrency(property.rent_amount)}</td>

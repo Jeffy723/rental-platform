@@ -84,7 +84,7 @@ requestForm.addEventListener("submit", async (event) => {
     issue_type: document.getElementById("issueType").value.trim(),
     description: document.getElementById("description").value.trim(),
     request_date: document.getElementById("requestDate").value,
-    status: "open",
+    status: "Pending",
     cost_estimate: Number(document.getElementById("costEstimate").value || 0)
   };
 
@@ -110,7 +110,7 @@ requestTableBody.addEventListener("click", async (event) => {
 
   const cost = prompt("Enter final cost estimate");
   const { error } = await updateMaintenanceRequest(id, {
-    status: "resolved",
+    status: "Completed",
     cost_estimate: Number(cost || 0)
   });
 
