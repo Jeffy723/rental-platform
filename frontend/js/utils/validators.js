@@ -10,10 +10,11 @@ export function isPositiveNumber(value) {
 export function validatePropertyPayload(payload) {
   const errors = [];
 
+  if (!isRequired(payload.title)) errors.push("Property title is required");
   if (!isRequired(payload.property_type)) errors.push("Property type is required");
   if (!isRequired(payload.address)) errors.push("Address is required");
   if (!isRequired(payload.city)) errors.push("City is required");
-  if (!isPositiveNumber(payload.rent_amount)) errors.push("Rent must be a valid number");
+  if (!Number.isFinite(Number(payload.rent_amount)) || Number(payload.rent_amount) <= 0) errors.push("Rent must be greater than 0");
 
   return {
     valid: errors.length === 0,

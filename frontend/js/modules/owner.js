@@ -30,7 +30,7 @@ function prefillOwnerProfile(profile) {
   document.getElementById("ownerPhone").value = profile.phone || "";
   document.getElementById("ownerAddress").value = profile.address || "";
   document.getElementById("ownerCity").value = profile.city || "";
-  document.getElementById("ownerType").value = profile.owner_type || "individual";
+  document.getElementById("ownerType").value = profile.owner_type || "Local";
 }
 
 async function loadOwnerSummary() {

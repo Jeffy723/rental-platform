@@ -12,7 +12,7 @@ function logoutUser() {
   setFlashMessage("Logged out successfully", "success", "auth");
 
   // Redirect to login
-  window.location.href = "../auth/login.html";
+  window.location.href = "../pages/login.html";
 }
 
 const logoutBtn = document.getElementById("logoutBtn");

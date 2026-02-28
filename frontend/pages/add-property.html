@@ -22,6 +22,10 @@
     <form id="propertyForm">
       <div class="form-grid">
         <div>
+          <label for="title">Property Title</label>
+          <input type="text" id="title" placeholder="2BHK apartment near metro" required />
+        </div>
+        <div>
           <label for="propertyType">Property Type</label>
           <input type="text" id="propertyType" placeholder="House / Shop / Office" required />
         </div>
@@ -64,14 +68,18 @@
 
         <div>
           <label for="allowedUsage">Allowed Usage</label>
-          <input type="text" id="allowedUsage" placeholder="Family / Office / Retail" />
+          <select id="allowedUsage">
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Both">Both</option>
+          </select>
         </div>
         <div>
           <label for="status">Status</label>
           <select id="status">
-            <option value="available">available</option>
-            <option value="occupied">occupied</option>
-            <option value="maintenance">maintenance</option>
+            <option value="Available">Available</option>
+            <option value="Rented">Rented</option>
+            <option value="Inactive">Inactive</option>
           </select>
         </div>
 

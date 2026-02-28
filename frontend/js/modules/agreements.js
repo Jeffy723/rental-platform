@@ -27,7 +27,7 @@ async function loadSelectOptions() {
   if (!canCreateAgreement()) return;
 
   const [{ data: properties, error: propertyError }, { data: tenants, error: tenantError }] = await Promise.all([
-    listProperties({ status: "available" }),
+    listProperties({ status: "Available" }),
     getTenants()
   ]);
 
@@ -38,7 +38,7 @@ async function loadSelectOptions() {
   }
 
   propertySelect.innerHTML = `<option value="">Select Property</option>${(properties || [])
-    .map((property) => `<option value="${property.property_id}">#${property.property_id} - ${property.address}, ${property.city}</option>`)
+    .map((property) => `<option value="${property.property_id}">#${property.property_id} - ${property.title || property.address}, ${property.city}</option>`)
     .join("")}`;
 
   tenantSelect.innerHTML = `<option value="">Select Tenant</option>${(tenants || [])
@@ -77,7 +77,7 @@ async function loadAgreementList() {
           <td>${formatDate(agreement.start_date)} to ${formatDate(agreement.end_date)}</td>
           <td>${formatCurrency(agreement.monthly_rent)}</td>
           <td>${agreement.agreement_status || "-"}</td>
-          <td>${user.role === "admin" ? `<button class="btn btn-secondary statusBtn" data-id="${agreement.agreement_id}">Mark Active</button>` : "-"}</td>
+          <td>${user.role === "admin" ? `<button class="btn btn-secondary statusBtn" data-id="${agreement.agreement_id}">Mark Completed</button>` : "-"}</td>
         </tr>
       `
       )
@@ -93,7 +93,7 @@ agreementTableBody.addEventListener("click", async (event) => {
   const id = Number(target.dataset.id);
   if (!id) return;
 
-  const { error } = await updateAgreementStatus(id, "active");
+  const { error } = await updateAgreementStatus(id, "Completed");
   if (error) {
     console.error(error);
     alert("Failed to update status");
