@@ -9,11 +9,16 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="app-body">
+  <div class="utility-bar">
+    <a class="btn btn-secondary" data-back-dashboard href="../dashboards/owner.html">← Back to Dashboard</a>
+    <button class="btn btn-secondary" type="button" data-theme-toggle>🌙 Dark mode</button>
+  </div>
+
   <main class="page-shell content-stack">
     <section class="page-card content-stack">
       <div class="panel-header">
-        <h2 class="section-title">Discover properties</h2>
-        <p class="section-subtitle">Filter by city and status to find your best fit.</p>
+        <h2 class="section-title">Property search workspace</h2>
+        <p class="section-subtitle">Filter by city and status to quickly manage your own listings.</p>
       </div>
 
       <div class="toolbar">
@@ -36,5 +41,6 @@
     </section>
   </main>
   <script type="module" src="../js/modules/propertyList.js"></script>
+<script type="module" src="../js/modules/themeControls.js"></script>
 </body>
 </html>
