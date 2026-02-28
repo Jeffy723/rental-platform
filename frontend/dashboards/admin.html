@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -9,55 +9,43 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="app-body">
-  <main class="dashboard-shell dashboard-grid">
-    <section class="page-card">
-      <div class="dashboard-hero">
-        <div>
-          <h1 class="section-title">Admin Dashboard</h1>
-          <p>Manage users, properties, agreements, payments, and maintenance workflows.</p>
+  <main class="dashboard-layout">
+    <aside class="sidebar">
+      <p class="brand">Rental Platform</p>
+      <p class="side-muted">Admin workspace</p>
+      <nav class="nav-list">
+        <a class="active" href="./admin.html">Dashboard</a>
+        <a href="../pages/property-list.html">Properties</a>
+        <a href="../pages/agreements.html">Agreements</a>
+        <a href="../pages/payments.html">Payments</a>
+        <a href="../pages/maintenance.html">Maintenance</a>
+      </nav>
+      <div class="actions-row"><button id="logoutBtn" class="btn btn-danger" type="button">Logout</button></div>
+    </aside>
+
+    <section class="dashboard-shell">
+      <section class="page-card">
+        <h1 class="section-title">Admin Dashboard</h1>
+        <p class="section-subtitle">Monitor platform health, user growth, and property operations.</p>
+        <div class="kpi-grid">
+          <article class="kpi-card"><p class="kpi-label">Total Users</p><p class="kpi-value" id="userCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Total Properties</p><p class="kpi-value" id="propertyCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Available Listings</p><p class="kpi-value" id="availableCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Rented Listings</p><p class="kpi-value" id="rentedCount">0</p></article>
         </div>
-        <button id="logoutBtn" class="btn btn-danger" type="button">Logout</button>
-      </div>
+      </section>
 
-      <div class="dashboard-actions">
-        <a class="btn btn-primary" href="../pages/property-list.html">View Properties</a>
-        <a class="btn btn-secondary" href="../pages/agreements.html">Manage Agreements</a>
-        <a class="btn btn-secondary" href="../pages/payments.html">View Payments</a>
-        <a class="btn btn-secondary" href="../pages/maintenance.html">View Maintenance</a>
-      </div>
-    </section>
+      <section class="page-card data-table-card">
+        <h3 class="section-title">User Management</h3>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody id="userTableBody"></tbody></table></div>
+      </section>
 
-    <section class="page-card">
-      <div class="kpi-grid">
-        <article class="kpi-card">
-          <p class="kpi-label">Total Users</p>
-          <p class="kpi-value" id="userCount">0</p>
-        </article>
-        <article class="kpi-card">
-          <p class="kpi-label">Total Properties</p>
-          <p class="kpi-value" id="propertyCount">0</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="page-card data-table-card">
-      <h3 class="section-title">User Directory</h3>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-            </tr>
-          </thead>
-          <tbody id="userTableBody"></tbody>
-        </table>
-      </div>
+      <section class="page-card data-table-card">
+        <h3 class="section-title">Property Overview</h3>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>Title</th><th>City</th><th>Status</th><th>Rent</th></tr></thead><tbody id="propertyOverviewBody"></tbody></table></div>
+      </section>
     </section>
   </main>
-
   <script type="module" src="../js/modules/admin.js"></script>
 </body>
 </html>

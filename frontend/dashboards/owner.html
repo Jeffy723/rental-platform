@@ -1,77 +1,66 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Owner Dashboard | Rental Platform</title>
   <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
   <link rel="stylesheet" href="../css/dashboard.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="../css/forms.css" />
 </head>
 <body class="app-body">
-  <main class="dashboard-shell dashboard-grid">
-    <section class="page-card">
-      <div class="dashboard-hero">
-        <div>
-          <h1 class="section-title">Owner Dashboard</h1>
-          <p>Manage listings, agreements, payments, and maintenance from one workspace.</p>
-        </div>
-        <button id="logoutBtn" class="btn btn-danger" type="button">Logout</button>
-      </div>
+  <main class="dashboard-layout">
+    <aside class="sidebar">
+      <p class="brand">Rental Platform</p>
+      <p class="side-muted">Owner workspace</p>
+      <nav class="nav-list">
+        <a class="active" href="./owner.html">Dashboard</a>
+        <a href="../pages/add-property.html">Add Property</a>
+        <a href="../pages/property-list.html">Manage Properties</a>
+        <a href="../pages/agreements.html">Agreements</a>
+        <a href="../pages/payments.html">Payments</a>
+        <a href="../pages/maintenance.html">Maintenance</a>
+      </nav>
+      <div class="actions-row"><button id="logoutBtn" class="btn btn-danger" type="button">Logout</button></div>
+    </aside>
 
-      <div class="dashboard-actions">
-        <a class="btn btn-primary" href="../pages/add-property.html">Add Property</a>
-        <a class="btn btn-secondary" href="../pages/property-list.html">My Properties</a>
-        <a class="btn btn-secondary" href="../pages/agreements.html">Agreements</a>
-        <a class="btn btn-secondary" href="../pages/payments.html">Payments</a>
-        <a class="btn btn-secondary" href="../pages/maintenance.html">Maintenance</a>
-      </div>
-    </section>
+    <section class="dashboard-shell">
+      <section class="page-card">
+        <div class="dashboard-hero">
+          <div>
+            <h1 class="section-title">Owner Dashboard</h1>
+            <p>Upload photos of your property to attract tenants. Tip: listings with images get more views.</p>
+          </div>
+          <a class="btn btn-primary" href="../pages/add-property.html">+ Add Listing</a>
+        </div>
+        <div class="kpi-grid">
+          <article class="kpi-card"><p class="kpi-label">Total Properties</p><p class="kpi-value" id="ownerPropertyCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Rented Properties</p><p class="kpi-value" id="ownerRentedCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Estimated Monthly Income</p><p class="kpi-value" id="ownerIncome">₹0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Profile Status</p><p class="kpi-value" id="ownerProfileStatus">Incomplete</p></article>
+        </div>
+      </section>
 
-    <section class="page-card">
-      <div class="kpi-grid">
-        <article class="kpi-card">
-          <p class="kpi-label">My Properties</p>
-          <p class="kpi-value" id="ownerPropertyCount">0</p>
-        </article>
-        <article class="kpi-card">
-          <p class="kpi-label">Profile Status</p>
-          <p class="kpi-value" id="ownerProfileStatus">Incomplete</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="page-card">
-      <h3 class="section-title">Owner Profile</h3>
-      <p class="section-subtitle">Keep this profile updated to manage listings and agreements smoothly.</p>
-      <form id="ownerProfileForm" class="form-grid">
+      <section class="page-card split-grid">
         <div>
-          <label for="ownerPhone">Phone</label>
-          <input id="ownerPhone" type="text" placeholder="Phone number" required />
+          <h3 class="section-title">Complete owner profile</h3>
+          <p class="section-subtitle">This is required for better listing trust and smoother agreements.</p>
+          <form id="ownerProfileForm" class="form-grid">
+            <div><label for="ownerPhone">Phone</label><input id="ownerPhone" type="text" placeholder="Phone number" required /></div>
+            <div><label for="ownerType">Owner Type</label><select id="ownerType" required><option value="Local">Local</option><option value="NRI">NRI</option></select></div>
+            <div><label for="ownerCity">City</label><input id="ownerCity" type="text" placeholder="City" required /></div>
+            <div class="full"><label for="ownerAddress">Address</label><input id="ownerAddress" type="text" placeholder="Address" required /></div>
+            <div class="full"><button class="btn btn-primary" type="submit">Save Profile</button></div>
+          </form>
         </div>
         <div>
-          <label for="ownerType">Owner Type</label>
-          <select id="ownerType" required>
-            <option value="Local">Local</option>
-            <option value="NRI">NRI</option>
-          </select>
+          <h3 class="section-title">Property previews</h3>
+          <div id="ownerPropertyPreview" class="property-grid"></div>
         </div>
-        <div>
-          <label for="ownerCity">City</label>
-          <input id="ownerCity" type="text" placeholder="City" required />
-        </div>
-        <div class="full">
-          <label for="ownerAddress">Address</label>
-          <input id="ownerAddress" type="text" placeholder="Address" required />
-        </div>
-        <div class="full actions-row">
-          <button class="btn btn-primary" type="submit">Save Profile</button>
-        </div>
-      </form>
+      </section>
     </section>
   </main>
-
   <script type="module" src="../js/modules/owner.js"></script>
 </body>
 </html>

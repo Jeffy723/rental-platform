@@ -1,5 +1,5 @@
 import { requireUser, logout } from "../core/auth.js";
-import { renderFlashMessage, showToast } from "../utils/helpers.js";
+import { renderFlashMessage, showToast, formatCurrency } from "../utils/helpers.js";
 import { getOwnerByUserId, saveOwnerProfile } from "../services/userService.js";
 import { getPropertiesByOwner } from "../services/propertyService.js";
 
@@ -16,13 +16,7 @@ function setProfileStatus(isComplete) {
 }
 
 function isOwnerProfileComplete(profile) {
-  return Boolean(
-    profile &&
-    profile.phone &&
-    profile.address &&
-    profile.city &&
-    profile.owner_type
-  );
+  return Boolean(profile && profile.phone && profile.address && profile.city && profile.owner_type);
 }
 
 function prefillOwnerProfile(profile) {
@@ -41,13 +35,30 @@ async function loadOwnerSummary() {
   setProfileStatus(isOwnerProfileComplete(ownerProfile));
 
   const propertyCountElement = document.getElementById("ownerPropertyCount");
+  const rentedCountElement = document.getElementById("ownerRentedCount");
+  const incomeElement = document.getElementById("ownerIncome");
+  const preview = document.getElementById("ownerPropertyPreview");
+
   if (!ownerProfile?.owner_id) {
-    if (propertyCountElement) propertyCountElement.textContent = "0";
+    propertyCountElement.textContent = "0";
+    rentedCountElement.textContent = "0";
+    incomeElement.textContent = formatCurrency(0);
+    preview.innerHTML = "<div class='empty-state'>No properties yet. Add your first listing to start.</div>";
     return;
   }
 
   const { data: properties } = await getPropertiesByOwner(ownerProfile.owner_id);
-  if (propertyCountElement) propertyCountElement.textContent = String((properties || []).length);
+  const rows = properties || [];
+  const rented = rows.filter((item) => item.status === "Rented");
+  const income = rented.reduce((sum, item) => sum + Number(item.rent_amount || 0), 0);
+
+  propertyCountElement.textContent = String(rows.length);
+  rentedCountElement.textContent = String(rented.length);
+  incomeElement.textContent = formatCurrency(income);
+
+  preview.innerHTML = rows.length
+    ? rows.slice(0, 3).map((item) => `<article class='property-card'><img src='${item.property_images?.[0]?.image_url || "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80"}' alt='property'/><div class='property-body'><h4>${item.title || "Untitled"}</h4><p class='property-meta'>${item.city || "-"}</p><p><strong>${formatCurrency(item.rent_amount)}</strong></p></div></article>`).join("")
+    : "<div class='empty-state'>No listings found.</div>";
 }
 
 ownerProfileForm.addEventListener("submit", async (event) => {
@@ -67,7 +78,6 @@ ownerProfileForm.addEventListener("submit", async (event) => {
 
   const { data, error } = await saveOwnerProfile(user.user_id, payload);
   if (error) {
-    console.error("Failed to save owner profile:", error);
     showToast(`Profile update failed: ${error.message || "unknown error"}`, "error");
     return;
   }
@@ -78,5 +88,4 @@ ownerProfileForm.addEventListener("submit", async (event) => {
 });
 
 document.getElementById("logoutBtn").addEventListener("click", logout);
-
 loadOwnerSummary();

@@ -1,77 +1,62 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tenant Dashboard | Rental Platform</title>
   <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
   <link rel="stylesheet" href="../css/dashboard.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="../css/forms.css" />
 </head>
 <body class="app-body">
-  <main class="dashboard-shell dashboard-grid">
-    <section class="page-card">
-      <div class="dashboard-hero">
-        <div>
-          <h1 class="section-title">Tenant Dashboard</h1>
-          <p>Track rent, maintenance requests, and lease details in one place.</p>
-        </div>
-        <button id="logoutBtn" class="btn btn-danger" type="button">Logout</button>
-      </div>
+  <main class="dashboard-layout">
+    <aside class="sidebar">
+      <p class="brand">Rental Platform</p>
+      <p class="side-muted">Tenant workspace</p>
+      <nav class="nav-list">
+        <a class="active" href="./tenant.html">Dashboard</a>
+        <a href="../pages/property-list.html">Browse Properties</a>
+        <a href="../pages/agreements.html">My Agreement</a>
+        <a href="../pages/payments.html">My Payments</a>
+        <a href="../pages/maintenance.html">Maintenance</a>
+      </nav>
+      <div class="actions-row"><button id="logoutBtn" class="btn btn-danger" type="button">Logout</button></div>
+    </aside>
 
-      <div class="dashboard-actions">
-        <a class="btn btn-primary" href="../pages/property-list.html">Browse Properties</a>
-        <a class="btn btn-secondary" href="../pages/agreements.html">My Agreement</a>
-        <a class="btn btn-secondary" href="../pages/payments.html">My Payments</a>
-        <a class="btn btn-secondary" href="../pages/maintenance.html">Maintenance</a>
-      </div>
-    </section>
+    <section class="dashboard-shell">
+      <section class="page-card">
+        <div class="dashboard-hero">
+          <div><h1 class="section-title">Tenant Dashboard</h1><p>Recommended homes near you and recently added properties.</p></div>
+          <a class="btn btn-primary" href="../pages/property-list.html">Explore Homes</a>
+        </div>
+        <div class="kpi-grid">
+          <article class="kpi-card"><p class="kpi-label">Available Properties</p><p class="kpi-value" id="availablePropertyCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Wishlist</p><p class="kpi-value" id="wishlistCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Recently Viewed</p><p class="kpi-value" id="recentCount">0</p></article>
+          <article class="kpi-card"><p class="kpi-label">Profile Status</p><p class="kpi-value" id="tenantProfileStatus">Incomplete</p></article>
+        </div>
+      </section>
 
-    <section class="page-card">
-      <div class="kpi-grid">
-        <article class="kpi-card">
-          <p class="kpi-label">Available Properties</p>
-          <p class="kpi-value" id="availablePropertyCount">0</p>
-        </article>
-        <article class="kpi-card">
-          <p class="kpi-label">Profile Status</p>
-          <p class="kpi-value" id="tenantProfileStatus">Incomplete</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="page-card">
-      <h3 class="section-title">Tenant Profile</h3>
-      <p class="section-subtitle">Complete this information to support agreement verification and operations.</p>
-      <form id="tenantProfileForm" class="form-grid">
+      <section class="page-card split-grid">
         <div>
-          <label for="tenantPhone">Phone</label>
-          <input id="tenantPhone" type="text" placeholder="Phone number" required />
+          <h3 class="section-title">Complete tenant profile</h3>
+          <form id="tenantProfileForm" class="form-grid">
+            <div><label for="tenantPhone">Phone</label><input id="tenantPhone" type="text" placeholder="Phone number" required /></div>
+            <div><label for="aadhaarNo">Aadhaar No</label><input id="aadhaarNo" type="text" placeholder="12-digit Aadhaar" required /></div>
+            <div><label for="occupation">Occupation</label><input id="occupation" type="text" placeholder="Occupation" required /></div>
+            <div><label for="tenantCity">City</label><input id="tenantCity" type="text" placeholder="City" required /></div>
+            <div class="full"><label for="permanentAddress">Permanent Address</label><input id="permanentAddress" type="text" placeholder="Permanent address" required /></div>
+            <div class="full"><button class="btn btn-primary" type="submit">Save Profile</button></div>
+          </form>
         </div>
         <div>
-          <label for="aadhaarNo">Aadhaar No</label>
-          <input id="aadhaarNo" type="text" placeholder="12-digit Aadhaar" required />
+          <h3 class="section-title">Suggested properties</h3>
+          <div id="tenantRecommendations" class="property-grid"></div>
         </div>
-        <div>
-          <label for="occupation">Occupation</label>
-          <input id="occupation" type="text" placeholder="Occupation" required />
-        </div>
-        <div>
-          <label for="tenantCity">City</label>
-          <input id="tenantCity" type="text" placeholder="City" required />
-        </div>
-        <div class="full">
-          <label for="permanentAddress">Permanent Address</label>
-          <input id="permanentAddress" type="text" placeholder="Permanent address" required />
-        </div>
-        <div class="full actions-row">
-          <button class="btn btn-primary" type="submit">Save Profile</button>
-        </div>
-      </form>
+      </section>
     </section>
   </main>
-
   <script type="module" src="../js/modules/tenant.js"></script>
 </body>
 </html>
