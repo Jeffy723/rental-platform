@@ -1,4 +1,4 @@
-import { requireUser, logout } from "../core/auth.js";
+import { requireUser } from "../core/auth.js";
 import { renderFlashMessage } from "../utils/helpers.js";
 import { getAllUsers } from "../services/userService.js";
 import { listProperties } from "../services/propertyService.js";
@@ -37,5 +37,4 @@ async function loadAdminSummary() {
     : "<tr><td colspan='5'>No properties found.</td></tr>";
 }
 
-document.getElementById("logoutBtn").addEventListener("click", logout);
 loadAdminSummary();
