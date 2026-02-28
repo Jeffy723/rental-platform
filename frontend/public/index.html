@@ -14,10 +14,15 @@
     <strong class="brand-mark">🏠 Rental Platform</strong>
     <div class="landing-links">
       <a href="#">Home</a>
+      <a href="#aboutSection">About</a>
       <a href="#recommendedGrid">Discover</a>
       <a href="#newHomesGrid">New homes</a>
+      <a href="#termsSection">Terms & Conditions</a>
     </div>
-    <a class="btn btn-secondary" href="../pages/login.html">Login</a>
+    <div class="actions-row nav-actions">
+      <a class="btn btn-secondary" href="../pages/login.html">Login</a>
+      <a class="btn btn-primary" href="../pages/register.html">Sign up</a>
+    </div>
   </nav>
 
   <div class="landing-grid">
@@ -68,7 +73,40 @@
     <p class="section-subtitle">Fresh inventory uploaded by owners this week.</p>
     <div id="newHomesGrid" class="property-grid"></div>
   </section>
+
+  <section id="aboutSection" class="page-card">
+    <h2 class="section-title">About Rental Platform</h2>
+    <p class="section-subtitle">We help tenants, owners, and admins collaborate in one transparent system with verified profiles, agreement records, and maintenance tracking.</p>
+    <div class="kpi-grid">
+      <article class="kpi-card"><p class="kpi-label">For tenants</p><p>Discover verified homes and contact owners quickly.</p></article>
+      <article class="kpi-card"><p class="kpi-label">For owners</p><p>Publish listings, screen tenant details, and manage agreements.</p></article>
+      <article class="kpi-card"><p class="kpi-label">For admins</p><p>Track users, rental activity, and platform health in one dashboard.</p></article>
+    </div>
+  </section>
+
+  <section id="termsSection" class="page-card">
+    <h2 class="section-title">Terms & Conditions</h2>
+    <ul class="terms-list">
+      <li>All listings must include accurate address, rent, and property details.</li>
+      <li>Users are responsible for submitting valid identity and profile information.</li>
+      <li>Payments and agreements should be recorded through the platform for traceability.</li>
+      <li>Harassment, fraudulent activity, and spam listings may lead to account suspension.</li>
+      <li>By using this service, you agree to follow local rental laws and regulations.</li>
+    </ul>
+  </section>
 </main>
+
+<footer class="site-footer page-shell glass-panel">
+  <p>© <span id="year"></span> Rental Platform · Transparent renting for everyone.</p>
+  <div class="landing-links">
+    <a href="#">Home</a>
+    <a href="#aboutSection">About</a>
+    <a href="#termsSection">Terms</a>
+    <a href="../pages/login.html">Login</a>
+  </div>
+</footer>
+
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
 
 <script type="module" src="../js/modules/home.js"></script>
 </body>
