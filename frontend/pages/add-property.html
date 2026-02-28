@@ -10,10 +10,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="app-body">
+  <div class="utility-bar">
+    <a class="btn btn-secondary" data-back-dashboard href="../dashboards/owner.html">← Back to Dashboard</a>
+    <button class="btn btn-secondary" type="button" data-theme-toggle>🌙 Dark mode</button>
+  </div>
+
 <main class="page-shell content-stack">
   <section class="page-card split-grid">
     <div>
-      <h2 class="section-title">Airbnb-style host flow</h2>
+      <h2 class="section-title">Owner publishing flow</h2>
       <p class="section-subtitle">Upload complete details and multiple photos to improve listing quality.</p>
       <div class="callout">Tip: Listings with images and detailed descriptions usually get more tenant views.</div>
     </div>
@@ -54,5 +59,6 @@
   </section>
 </main>
 <script type="module" src="../js/modules/addProperty.js"></script>
+<script type="module" src="../js/modules/themeControls.js"></script>
 </body>
 </html>
