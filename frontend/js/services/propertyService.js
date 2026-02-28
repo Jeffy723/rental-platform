@@ -6,7 +6,7 @@ export async function listProperties({ city = "", status = "" } = {}) {
   let query = supabaseClient
     .from("properties")
     .select(
-      "property_id,owner_id,property_type,address,city,area_sqft,bedrooms,bathrooms,office_rooms,shop_units,rent_amount,allowed_usage,status,owners(user_id,users(name,email)),property_images(image_url)"
+      "property_id,owner_id,title,property_type,address,city,area_sqft,bedrooms,bathrooms,office_rooms,shop_units,rent_amount,allowed_usage,status,owners(user_id,users(name,email)),property_images(image_url)"
     )
     .order("property_id", { ascending: false });
 
@@ -20,7 +20,7 @@ export async function getPropertiesByOwner(ownerId) {
   return supabaseClient
     .from("properties")
     .select(
-      "property_id,owner_id,property_type,address,city,area_sqft,bedrooms,bathrooms,office_rooms,shop_units,rent_amount,allowed_usage,status,owners(user_id,users(name,email)),property_images(image_url)"
+      "property_id,owner_id,title,property_type,address,city,area_sqft,bedrooms,bathrooms,office_rooms,shop_units,rent_amount,allowed_usage,status,owners(user_id,users(name,email)),property_images(image_url)"
     )
     .eq("owner_id", ownerId)
     .order("property_id", { ascending: false });

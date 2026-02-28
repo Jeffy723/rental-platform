@@ -37,7 +37,7 @@ function prefillTenantProfile(profile) {
 
 async function loadTenantSummary() {
   const [{ data: properties }, tenantResult] = await Promise.all([
-    listProperties({ status: "available" }),
+    listProperties({ status: "Available" }),
     getTenantByUserId(user.user_id)
   ]);
 

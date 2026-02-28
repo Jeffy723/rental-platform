@@ -12,6 +12,7 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const payload = {
+    title: document.getElementById("title").value.trim(),
     property_type: document.getElementById("propertyType").value.trim(),
     address: document.getElementById("address").value.trim(),
     city: document.getElementById("city").value.trim(),
