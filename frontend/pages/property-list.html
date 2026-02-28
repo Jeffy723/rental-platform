@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property List | Rental Platform</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="app-body">
+  <main class="page-shell">
+    <section class="page-card content-stack">
+      <div class="panel-header">
+        <h2 class="section-title">Property List</h2>
+        <p class="section-subtitle">Search and manage listings across cities and statuses.</p>
+      </div>
+
+      <div class="toolbar">
+      <input id="cityFilter" type="text" placeholder="Filter by city" />
+      <select id="statusFilter">
+        <option value="">All status</option>
+        <option value="available">available</option>
+        <option value="occupied">occupied</option>
+        <option value="maintenance">maintenance</option>
+      </select>
+      <button id="searchBtn" class="btn btn-primary" type="button">Search</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>Rent</th>
+              <th>Status</th>
+              <th>Owner</th>
+              <th>Image</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="propertyTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="../js/modules/propertyList.js"></script>
+</body>
+</html>

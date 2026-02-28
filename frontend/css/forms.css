@@ -1,0 +1,95 @@
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+}
+
+.auth-card {
+  width: min(460px, 100%);
+}
+
+.auth-brand {
+  margin-bottom: 1rem;
+}
+
+.auth-brand p {
+  color: var(--text-muted);
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.auth-links {
+  margin-top: 1rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.content-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: clamp(0.9rem, 1.8vw, 1.3rem);
+}
+
+.panel-header {
+  margin-bottom: 0.8rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.toolbar > * {
+  flex: 1 1 180px;
+}
+
+.landing-card {
+  width: min(560px, 94vw);
+  margin: 6vh auto;
+}
+
+.feature-list {
+  margin: 0.9rem 0 0;
+  padding-left: 1rem;
+  color: var(--text-muted);
+}
+
+.feature-list li {
+  margin-bottom: 0.4rem;
+}
+
+@media (max-width: 760px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar > * {
+    flex-basis: 100%;
+  }
+
+  .landing-card {
+    margin: 3vh auto;
+  }
+}

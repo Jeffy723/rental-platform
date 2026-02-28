@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agreements | Rental Platform</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="app-body">
+  <main class="page-shell content-stack">
+    <section class="page-card">
+      <h2 class="section-title">Rental Agreements</h2>
+      <p id="roleTag" class="role-chip"></p>
+    </section>
+
+    <form id="agreementForm" class="page-card">
+      <h3 class="section-title">Create Agreement (Admin)</h3>
+      <div class="form-grid">
+      <div>
+        <label for="propertyId">Property</label>
+        <select id="propertyId" required></select>
+      </div>
+      <div>
+        <label for="tenantId">Tenant</label>
+        <select id="tenantId" required></select>
+      </div>
+      <div>
+        <label for="startDate">Start Date</label>
+        <input id="startDate" type="date" required />
+      </div>
+      <div>
+        <label for="endDate">End Date</label>
+        <input id="endDate" type="date" required />
+      </div>
+      <div>
+        <label for="depositAmount">Deposit</label>
+        <input id="depositAmount" type="number" required />
+      </div>
+      <div>
+        <label for="monthlyRent">Monthly Rent</label>
+        <input id="monthlyRent" type="number" required />
+      </div>
+      <div>
+        <label class="checkbox-inline"><input id="policeVerified" type="checkbox" /> Police Verified</label>
+      </div>
+      <div>
+        <label for="agreementStatus">Status</label>
+        <select id="agreementStatus">
+          <option value="pending">pending</option>
+          <option value="active">active</option>
+          <option value="closed">closed</option>
+        </select>
+      </div>
+      <div class="full">
+        <button class="btn btn-primary" type="submit">Create Agreement</button>
+      </div>
+    </div>
+    </form>
+
+    <section class="page-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Property</th>
+              <th>Tenant</th>
+              <th>Duration</th>
+              <th>Rent</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="agreementTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/modules/agreements.js"></script>
+</body>
+</html>

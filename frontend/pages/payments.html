@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payments | Rental Platform</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="app-body">
+  <main class="page-shell content-stack">
+    <section class="page-card">
+      <h2 class="section-title">Rent Payments</h2>
+      <p id="roleTag" class="role-chip"></p>
+    </section>
+
+    <form id="paymentForm" class="page-card">
+      <h3 class="section-title">Add Payment (Admin/Owner)</h3>
+      <div class="form-grid">
+      <div>
+        <label for="agreementId">Agreement</label>
+        <select id="agreementId" required></select>
+      </div>
+      <div>
+        <label for="paymentMonth">Payment Month</label>
+        <input id="paymentMonth" type="month" required />
+      </div>
+      <div>
+        <label for="amountPaid">Amount Paid</label>
+        <input id="amountPaid" type="number" required />
+      </div>
+      <div>
+        <label for="paymentDate">Payment Date</label>
+        <input id="paymentDate" type="date" required />
+      </div>
+      <div>
+        <label for="paymentMode">Mode</label>
+        <select id="paymentMode">
+          <option value="UPI">UPI</option>
+          <option value="Card">Card</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Cash">Cash</option>
+        </select>
+      </div>
+      <div>
+        <label for="paymentStatus">Status</label>
+        <select id="paymentStatus">
+          <option value="paid">paid</option>
+          <option value="pending">pending</option>
+          <option value="failed">failed</option>
+        </select>
+      </div>
+      <div class="full">
+        <button class="btn btn-primary" type="submit">Record Payment</button>
+      </div>
+    </div>
+    </form>
+
+    <section class="page-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Agreement</th>
+              <th>Tenant</th>
+              <th>Month</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Mode</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="paymentTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/modules/payments.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maintenance | Rental Platform</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="app-body">
+  <main class="page-shell content-stack">
+    <section class="page-card">
+      <h2 class="section-title">Maintenance Requests</h2>
+      <p id="roleTag" class="role-chip"></p>
+    </section>
+
+    <form id="requestForm" class="page-card">
+      <h3 class="section-title">Raise Request (Tenant)</h3>
+      <div class="form-grid">
+      <div>
+        <label for="agreementId">Agreement</label>
+        <select id="agreementId" required></select>
+      </div>
+      <div>
+        <label for="requestDate">Request Date</label>
+        <input id="requestDate" type="date" required />
+      </div>
+      <div>
+        <label for="issueType">Issue Type</label>
+        <input id="issueType" type="text" placeholder="Plumbing, Electrical..." required />
+      </div>
+      <div>
+        <label for="costEstimate">Initial Cost Estimate</label>
+        <input id="costEstimate" type="number" value="0" />
+      </div>
+      <div class="full">
+        <label for="description">Description</label>
+        <textarea id="description" rows="4" placeholder="Describe the issue" required></textarea>
+      </div>
+      <div class="full">
+        <button class="btn btn-primary" type="submit">Submit Request</button>
+      </div>
+    </div>
+    </form>
+
+    <section class="page-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Property</th>
+              <th>Tenant</th>
+              <th>Issue</th>
+              <th>Description</th>
+              <th>Request Date</th>
+              <th>Status</th>
+              <th>Cost</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="requestTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/modules/maintenance.js"></script>
+</body>
+</html>

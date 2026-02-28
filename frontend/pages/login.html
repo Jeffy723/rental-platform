@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login | Rental Platform</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/forms.css" />
+
+  <!-- Supabase Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+<body class="app-body">
+
+<main class="auth-shell">
+  <section class="page-card auth-card">
+    <div class="auth-brand">
+      <h2>Welcome Back</h2>
+      <p>Log in to access your rental dashboard.</p>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" required />
+      </div>
+
+      <div>
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter your password" required />
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit">Login</button>
+    </form>
+
+    <p class="auth-links">
+      New user? <a href="./register.html">Create an account</a>
+    </p>
+  </section>
+</main>
+
+<!-- Your JS -->
+<script type="module" src="../js/modules/login.js"></script>
+
+</body>
+</html>
