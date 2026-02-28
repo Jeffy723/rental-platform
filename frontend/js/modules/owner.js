@@ -1,7 +1,8 @@
 import { requireUser, logout } from "../core/auth.js";
 import { renderFlashMessage, showToast, formatCurrency } from "../utils/helpers.js";
+import { validatePropertyPayload } from "../utils/validators.js";
 import { getOwnerByUserId, saveOwnerProfile } from "../services/userService.js";
-import { getPropertiesByOwner } from "../services/propertyService.js";
+import { createProperty, getPropertiesByOwner, uploadPropertyImage } from "../services/propertyService.js";
 
 const user = requireUser(["owner"]);
 if (!user) throw new Error("Unauthorized");
@@ -10,6 +11,9 @@ renderFlashMessage("dashboard");
 
 const ownerProfileForm = document.getElementById("ownerProfileForm");
 const ownerProfileStatus = document.getElementById("ownerProfileStatus");
+const ownerQuickPropertyForm = document.getElementById("ownerQuickPropertyForm");
+const ownerQuickImageInput = document.getElementById("quickPropertyImages");
+const ownerQuickGalleryPreview = document.getElementById("ownerQuickGalleryPreview");
 
 function setProfileStatus(isComplete) {
   ownerProfileStatus.textContent = isComplete ? "Complete" : "Incomplete";
@@ -25,6 +29,13 @@ function prefillOwnerProfile(profile) {
   document.getElementById("ownerAddress").value = profile.address || "";
   document.getElementById("ownerCity").value = profile.city || "";
   document.getElementById("ownerType").value = profile.owner_type || "Local";
+}
+
+function renderQuickImagePreviews() {
+  const files = Array.from(ownerQuickImageInput.files || []);
+  ownerQuickGalleryPreview.innerHTML = files.length
+    ? files.map((file) => `<img src="${URL.createObjectURL(file)}" alt="upload preview" />`).join("")
+    : "";
 }
 
 async function loadOwnerSummary() {
@@ -84,6 +95,67 @@ ownerProfileForm.addEventListener("submit", async (event) => {
 
   setProfileStatus(isOwnerProfileComplete(data));
   showToast("Owner profile updated", "success");
+  loadOwnerSummary();
+});
+
+ownerQuickImageInput.addEventListener("change", renderQuickImagePreviews);
+
+ownerQuickPropertyForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const { data: ownerData, error: ownerError } = await getOwnerByUserId(user.user_id);
+  if (ownerError || !ownerData?.owner_id) {
+    showToast("Please complete owner profile before adding properties", "error");
+    return;
+  }
+
+  const payload = {
+    title: document.getElementById("quickTitle").value.trim(),
+    property_type: document.getElementById("quickPropertyType").value.trim(),
+    address: document.getElementById("quickAddress").value.trim(),
+    city: document.getElementById("quickCity").value.trim(),
+    rent_amount: Number(document.getElementById("quickRent").value || 0),
+    area_sqft: 0,
+    bedrooms: 0,
+    bathrooms: 0,
+    office_rooms: 0,
+    shop_units: 0,
+    allowed_usage: "",
+    status: document.getElementById("quickStatus").value,
+    owner_id: ownerData.owner_id
+  };
+
+  const validation = validatePropertyPayload(payload);
+  if (!validation.valid) {
+    showToast(validation.errors.join(", "), "error");
+    return;
+  }
+
+  const submitBtn = ownerQuickPropertyForm.querySelector("button[type='submit']");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Publishing...";
+
+  const { data, error } = await createProperty(payload);
+  if (error || !data?.property_id) {
+    showToast("Failed to add property", "error");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Publish Property";
+    return;
+  }
+
+  const files = Array.from(ownerQuickImageInput.files || []);
+  for (const file of files) {
+    const uploadResult = await uploadPropertyImage(file, data.property_id);
+    if (uploadResult.error) {
+      console.error("Image upload failed", uploadResult.error);
+    }
+  }
+
+  showToast("Property published successfully", "success");
+  ownerQuickPropertyForm.reset();
+  ownerQuickGalleryPreview.innerHTML = "";
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Publish Property";
   loadOwnerSummary();
 });
 
