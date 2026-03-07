@@ -27,7 +27,7 @@ export async function getTenantByUserId(userId) {
     .from("tenants")
     .select("tenant_id,user_id,phone,aadhaar_no,occupation,permanent_address,city")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 }
 
 export async function getAllUsers() {
