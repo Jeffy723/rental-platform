@@ -16,8 +16,8 @@ function setProfileStatus(isComplete) {
   tenantProfileStatus.textContent = isComplete ? "Complete" : "Incomplete";
 }
 
-function isTenantProfileComplete(profile) {
-  return Boolean(profile && profile.phone && profile.aadhaar_no && profile.occupation && profile.permanent_address && profile.city);
+function toggleTenantProfileForm(shouldShow) {
+  tenantProfileForm.style.display = shouldShow ? "grid" : "none";
 }
 
 function prefillTenantProfile(profile) {
@@ -48,9 +48,20 @@ async function loadTenantSummary() {
   document.getElementById("wishlistCount").textContent = String(wishlist.length);
   document.getElementById("recentCount").textContent = String(recentlyViewed.length);
 
+  if (tenantResult?.error) {
+    console.error("Tenant profile fetch error:", tenantResult.error);
+  }
+
   const tenantProfile = tenantResult?.data || null;
   prefillTenantProfile(tenantProfile);
-  setProfileStatus(isTenantProfileComplete(tenantProfile));
+
+  if (tenantProfile) {
+    toggleTenantProfileForm(false);
+    setProfileStatus(true);
+  } else {
+    toggleTenantProfileForm(true);
+    setProfileStatus(false);
+  }
 
   const city = tenantProfile?.city;
   const picks = city ? rows.filter((item) => item.city?.toLowerCase() === city.toLowerCase()) : rows;
@@ -81,7 +92,8 @@ tenantProfileForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  setProfileStatus(isTenantProfileComplete(data));
+  setProfileStatus(Boolean(data));
+  toggleTenantProfileForm(!data);
   showToast("Tenant profile updated", "success");
   loadTenantSummary();
 });
