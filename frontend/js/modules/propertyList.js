@@ -47,7 +47,7 @@ async function fetchProperties() {
 
 function renderCards(properties) {
   if (!properties.length) {
-    propertyCards.innerHTML = "<div class='empty-state'>No properties found. Try another city or status.</div>";
+    propertyCards.innerHTML = "<div class='empty-state'><div class='empty-state-graphic'>🏠</div><h4>Welcome to your property workspace</h4><p>No properties match your current filters.</p><div class='empty-state-actions'><a class='btn btn-primary' href='./add-property.html'>Add your first property</a></div></div>";
     return;
   }
 
@@ -76,7 +76,7 @@ function renderCards(properties) {
 
 function renderTable(properties) {
   if (!properties.length) {
-    propertyTableBody.innerHTML = "<tr><td colspan='7'>No properties found.</td></tr>";
+    propertyTableBody.innerHTML = "<tr><td colspan='7'><div class='empty-state'><strong>No properties found.</strong> Refine your filters or add your first listing.</div></td></tr>";
     return;
   }
 

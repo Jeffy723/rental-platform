@@ -37,12 +37,12 @@ async function loadAdminSummary() {
   const userTableBody = document.getElementById("userTableBody");
   userTableBody.innerHTML = rowsUsers.length
     ? rowsUsers.map((row) => `<tr><td>${row.user_id}</td><td>${row.name || "-"}</td><td>${row.email || "-"}</td><td><span class='${roleClass(row.role)}'>${row.role || "-"}</span></td></tr>`).join("")
-    : "<tr><td colspan='4'>No users found.</td></tr>";
+    : "<tr><td colspan='4'><div class='empty-state'>No users onboarded yet.</div></td></tr>";
 
   const propertyOverviewBody = document.getElementById("propertyOverviewBody");
   propertyOverviewBody.innerHTML = rowsProperties.length
     ? rowsProperties.slice(0, 10).map((row) => `<tr><td>${row.property_id}</td><td>${row.title || "-"}</td><td>${row.city || "-"}</td><td><span class='${statusClass(row.status)}'>${row.status || "-"}</span></td><td>${row.rent_amount || 0}</td></tr>`).join("")
-    : "<tr><td colspan='5'>No properties found.</td></tr>";
+    : "<tr><td colspan='5'><div class='empty-state'>No properties available yet.</div></td></tr>";
 }
 
 loadAdminSummary();

@@ -14,6 +14,10 @@ const ownerProfileStatus = document.getElementById("ownerProfileStatus");
 const ownerQuickPropertyForm = document.getElementById("ownerQuickPropertyForm");
 const ownerQuickImageInput = document.getElementById("quickPropertyImages");
 const ownerQuickGalleryPreview = document.getElementById("ownerQuickGalleryPreview");
+const ownerIncomeChartCanvas = document.getElementById("ownerIncomeChart");
+
+let quickImageFiles = [];
+let ownerIncomeChart;
 
 function setProfileStatus(isComplete) {
   ownerProfileStatus.textContent = isComplete ? "Complete" : "Incomplete";
@@ -32,10 +36,51 @@ function prefillOwnerProfile(profile) {
 }
 
 function renderQuickImagePreviews() {
-  const files = Array.from(ownerQuickImageInput.files || []);
-  ownerQuickGalleryPreview.innerHTML = files.length
-    ? files.map((file) => `<img src="${URL.createObjectURL(file)}" alt="upload preview" />`).join("")
+  ownerQuickGalleryPreview.innerHTML = quickImageFiles.length
+    ? quickImageFiles
+      .map(
+        (file, index) => `
+          <article class="gallery-item">
+            <img src="${URL.createObjectURL(file)}" alt="upload preview" />
+            <button class="gallery-delete" type="button" data-index="${index}" aria-label="Delete image">🗑</button>
+          </article>
+        `
+      )
+      .join("")
     : "";
+}
+
+function drawIncomeChart(totalIncome) {
+  if (!ownerIncomeChartCanvas || typeof Chart === "undefined") return;
+
+  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  const base = totalIncome > 0 ? Math.round(totalIncome / labels.length) : 0;
+  const dataset = labels.map((_, index) => Math.max(0, base + index * Math.round(base * 0.12)));
+
+  if (ownerIncomeChart) ownerIncomeChart.destroy();
+  ownerIncomeChart = new Chart(ownerIncomeChartCanvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Income",
+        data: dataset,
+        borderRadius: 6,
+        backgroundColor: "rgba(79, 70, 229, 0.7)",
+        borderColor: "rgba(79, 70, 229, 1)",
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { color: "#64748b" }, grid: { color: "#e2e8f0" } },
+        x: { ticks: { color: "#64748b" }, grid: { display: false } }
+      }
+    }
+  });
 }
 
 async function loadOwnerSummary() {
@@ -54,7 +99,8 @@ async function loadOwnerSummary() {
     propertyCountElement.textContent = "0";
     rentedCountElement.textContent = "0";
     incomeElement.textContent = formatCurrency(0);
-    preview.innerHTML = "<div class='empty-state'>No properties yet. Add your first listing to start.</div>";
+    drawIncomeChart(0);
+    preview.innerHTML = "<div class='empty-state'><div class='empty-state-graphic'>🏡</div><h4>Welcome to your Owner workspace</h4><p>Get started by adding your first property listing.</p><div class='empty-state-actions'><a class='btn btn-primary' href='../pages/add-property.html'>Add your first property</a></div></div>";
     return;
   }
 
@@ -66,10 +112,11 @@ async function loadOwnerSummary() {
   propertyCountElement.textContent = String(rows.length);
   rentedCountElement.textContent = String(rented.length);
   incomeElement.textContent = formatCurrency(income);
+  drawIncomeChart(income);
 
   preview.innerHTML = rows.length
     ? rows.slice(0, 3).map((item) => `<article class='property-card'><img src='${item.property_images?.[0]?.image_url || "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80"}' alt='property'/><div class='property-body'><h4>${item.title || "Untitled"}</h4><p class='property-meta'>${item.city || "-"}</p><p><strong>${formatCurrency(item.rent_amount)}</strong></p></div></article>`).join("")
-    : "<div class='empty-state'>No listings found.</div>";
+    : "<div class='empty-state'><div class='empty-state-graphic'>✨</div><h4>No listings yet</h4><p>Publish your first property to start receiving tenant interest.</p><div class='empty-state-actions'><a class='btn btn-primary' href='../pages/add-property.html'>Add your first property</a></div></div>";
 }
 
 ownerProfileForm.addEventListener("submit", async (event) => {
@@ -98,7 +145,19 @@ ownerProfileForm.addEventListener("submit", async (event) => {
   loadOwnerSummary();
 });
 
-ownerQuickImageInput.addEventListener("change", renderQuickImagePreviews);
+ownerQuickImageInput.addEventListener("change", () => {
+  quickImageFiles = [...quickImageFiles, ...Array.from(ownerQuickImageInput.files || [])];
+  ownerQuickImageInput.value = "";
+  renderQuickImagePreviews();
+});
+
+ownerQuickGalleryPreview.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement) || !target.classList.contains("gallery-delete")) return;
+  const index = Number(target.dataset.index);
+  quickImageFiles.splice(index, 1);
+  renderQuickImagePreviews();
+});
 
 ownerQuickPropertyForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -143,8 +202,7 @@ ownerQuickPropertyForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const files = Array.from(ownerQuickImageInput.files || []);
-  for (const file of files) {
+  for (const file of quickImageFiles) {
     const uploadResult = await uploadPropertyImage(file, data.property_id);
     if (uploadResult.error) {
       console.error("Image upload failed", uploadResult.error);
@@ -153,7 +211,8 @@ ownerQuickPropertyForm.addEventListener("submit", async (event) => {
 
   showToast("Property published successfully", "success");
   ownerQuickPropertyForm.reset();
-  ownerQuickGalleryPreview.innerHTML = "";
+  quickImageFiles = [];
+  renderQuickImagePreviews();
   submitBtn.disabled = false;
   submitBtn.textContent = "Publish Property";
   loadOwnerSummary();

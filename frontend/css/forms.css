@@ -34,7 +34,7 @@
 .toolbar > * { flex: 1 1 180px; }
 
 .landing-hero {
-  width: min(1400px, 95vw);
+  width: min(1200px, 94vw);
   margin: 1.2rem auto;
   border-radius: 12px;
   overflow: hidden;
@@ -63,7 +63,7 @@
 
 .property-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
 .property-card { border-radius: 12px; overflow: hidden; }
-.property-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+.property-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
 .property-body { padding: 0.85rem; display: grid; gap: 0.35rem; }
 .property-meta { color: var(--text-secondary); font-size: 0.88rem; }
 

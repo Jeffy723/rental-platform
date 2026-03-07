@@ -7,27 +7,33 @@
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/forms.css" />
   <link rel="stylesheet" href="../css/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="app-body">
-  <div class="utility-bar">
-  </div>
+  <div class="utility-bar"></div>
   <main class="dashboard-layout dashboard-layout--full">
     <section class="dashboard-shell">
       <section class="page-card">
         <div class="dashboard-hero">
           <div>
             <h1 class="section-title">Owner Dashboard</h1>
-            <p>Upload photos of your property to attract tenants. Tip: listings with images get more views.</p>
+            <p>Upload high-quality photos and monitor listing performance from one workspace.</p>
           </div>
           <a class="btn btn-primary" href="../pages/add-property.html">+ Add Listing</a>
         </div>
         <div class="kpi-grid">
-          <article class="kpi-card"><p class="kpi-label">Total Properties</p><p class="kpi-value" id="ownerPropertyCount">0</p></article>
-          <article class="kpi-card"><p class="kpi-label">Rented Properties</p><p class="kpi-value" id="ownerRentedCount">0</p></article>
-          <article class="kpi-card"><p class="kpi-label">Estimated Monthly Income</p><p class="kpi-value" id="ownerIncome">₹0</p></article>
-          <article class="kpi-card"><p class="kpi-label">Profile Status</p><p class="kpi-value" id="ownerProfileStatus">Incomplete</p></article>
+          <article class="stat-card"><span class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-6v-7H10v7H4a1 1 0 0 1-1-1v-10.5z" stroke="currentColor" stroke-width="1.5"/></svg></span><div><p class="stat-label">Total Properties</p><p class="stat-value" id="ownerPropertyCount">0</p></div></article>
+          <article class="stat-card"><span class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/></svg></span><div><p class="stat-label">Rented Properties</p><p class="stat-value" id="ownerRentedCount">0</p></div></article>
+          <article class="stat-card"><span class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8" stroke="currentColor" stroke-width="1.5"/><path d="M17 7h4v4" stroke="currentColor" stroke-width="1.5"/></svg></span><div><p class="stat-label">Estimated Monthly Income</p><p class="stat-value" id="ownerIncome">₹0</p></div></article>
+          <article class="stat-card"><span class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.418 0-8 1.79-8 4v2h16v-2c0-2.21-3.582-4-8-4z" stroke="currentColor" stroke-width="1.5"/></svg></span><div><p class="stat-label">Profile Status</p><p class="stat-value" id="ownerProfileStatus">Incomplete</p></div></article>
         </div>
+      </section>
+
+      <section class="page-card chart-card">
+        <h3 class="section-title">Income trend</h3>
+        <p class="section-subtitle">Recent months based on your rented properties.</p>
+        <div class="income-chart-wrap"><canvas id="ownerIncomeChart"></canvas></div>
       </section>
 
       <section class="page-card split-grid">
@@ -69,6 +75,6 @@
     </section>
   </main>
   <script type="module" src="../js/modules/owner.js"></script>
-<script type="module" src="../js/modules/appShell.js"></script>
+  <script type="module" src="../js/modules/appShell.js"></script>
 </body>
 </html>

@@ -10,12 +10,35 @@ if (!user) throw new Error("Unauthorized");
 const form = document.getElementById("propertyForm");
 const imageInput = document.getElementById("propertyImages");
 const galleryPreview = document.getElementById("galleryPreview");
+let selectedFiles = [];
+
+function renderGallery() {
+  galleryPreview.innerHTML = selectedFiles.length
+    ? selectedFiles
+      .map(
+        (file, index) => `
+          <article class="gallery-item">
+            <img src="${URL.createObjectURL(file)}" alt="upload preview" />
+            <button class="gallery-delete" type="button" data-index="${index}" aria-label="Delete image">🗑</button>
+          </article>
+        `
+      )
+      .join("")
+    : "";
+}
 
 imageInput.addEventListener("change", () => {
-  const files = Array.from(imageInput.files || []);
-  galleryPreview.innerHTML = files.length
-    ? files.map((file) => `<img src="${URL.createObjectURL(file)}" alt="upload preview" />`).join("")
-    : "";
+  selectedFiles = [...selectedFiles, ...Array.from(imageInput.files || [])];
+  imageInput.value = "";
+  renderGallery();
+});
+
+galleryPreview.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement) || !target.classList.contains("gallery-delete")) return;
+  const index = Number(target.dataset.index);
+  selectedFiles.splice(index, 1);
+  renderGallery();
 });
 
 form.addEventListener("submit", async (event) => {
@@ -62,8 +85,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const files = Array.from(imageInput.files || []);
-  for (const file of files) {
+  for (const file of selectedFiles) {
     const uploadResult = await uploadPropertyImage(file, data.property_id);
     if (uploadResult.error) {
       console.error("Image upload failed", uploadResult.error);
@@ -72,7 +94,8 @@ form.addEventListener("submit", async (event) => {
 
   showToast("Property published successfully", "success");
   form.reset();
-  galleryPreview.innerHTML = "";
+  selectedFiles = [];
+  renderGallery();
   submitBtn.disabled = false;
   submitBtn.textContent = "Publish Property";
 });
