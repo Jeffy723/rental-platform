@@ -6,6 +6,7 @@
   <title>Profile | Rental Platform</title>
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/forms.css" />
+  <link rel="icon" type="image/x-icon" href="/assets/icons/favicon.ico">
 </head>
 <body class="app-body">
   <div class="utility-bar">
@@ -33,8 +34,10 @@
         <div><label for="profileRole">Role</label><input id="profileRole" type="text" disabled /></div>
         <div><label for="profilePhone">Phone</label><input id="profilePhone" type="text" required /></div>
         <div><label for="profileCity">City</label><input id="profileCity" type="text" required /></div>
-        <div><label for="profileCompletion">Profile Completion</label><input id="profileCompletion" type="text" disabled /></div>
-        <div class="full"><button id="saveProfileBtn" class="btn btn-primary" type="submit" hidden>Save Profile</button></div>
+        <div class="full actions-row">
+          <button id="saveProfileBtn" class="btn btn-primary" type="submit" hidden>Save Changes</button>
+          <button id="cancelProfileBtn" class="btn btn-secondary" type="button" hidden>Cancel</button>
+        </div>
       </form>
     </section>
   </main>

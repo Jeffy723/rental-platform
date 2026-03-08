@@ -1,96 +1,185 @@
 import supabaseClient from "./core/supabaseClient.js";
-import { logout as logoutSession } from "./core/auth.js";
-import { getUserByEmail } from "./services/userService.js";
 import { showToast } from "./utils/helpers.js";
-
-const authUser = JSON.parse(localStorage.getItem("user") || "null");
-const appUser = JSON.parse(localStorage.getItem("appUser") || "null");
-
-if (!authUser || !appUser) {
-  window.location.href = "/pages/login.html";
-}
 
 const profileForm = document.getElementById("profileForm");
 const editProfileBtn = document.getElementById("editProfileBtn");
 const saveProfileBtn = document.getElementById("saveProfileBtn");
+const cancelProfileBtn = document.getElementById("cancelProfileBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
 let isEditing = false;
+let baseUser = null;
+let roleProfile = null;
 
-function renderProfile(user) {
-  document.getElementById("profileName").value = user.name || "";
-  document.getElementById("profileEmail").value = user.email || "";
-  document.getElementById("profileRole").value = user.role || "";
-  document.getElementById("profilePhone").value = user.phone || "";
-  document.getElementById("profileCity").value = user.city || "";
-  document.getElementById("profileCompletion").value = user.profile_completed ? "Complete" : "Incomplete";
+function getField(id) {
+  return document.getElementById(id);
 }
 
-function setEditMode(enabled) {
+function renderProfile(profile) {
+  getField("profileName").value = profile.name || "";
+  getField("profileEmail").value = profile.email || "";
+  getField("profileRole").value = profile.role || "";
+  getField("profilePhone").value = profile.phone || "";
+  getField("profileCity").value = profile.city || "";
+}
+
+function toggleEditMode(enabled) {
   isEditing = enabled;
-  document.getElementById("profileName").disabled = true;
-  document.getElementById("profilePhone").disabled = !enabled;
-  document.getElementById("profileCity").disabled = !enabled;
+  const role = baseUser?.role;
+  const editable = enabled && (role === "owner" || role === "tenant");
+
+  getField("profileName").disabled = true;
+  getField("profileEmail").disabled = true;
+  getField("profileRole").disabled = true;
+  getField("profilePhone").disabled = !editable;
+  getField("profileCity").disabled = !editable;
+
+  editProfileBtn.hidden = enabled;
   saveProfileBtn.hidden = !enabled;
-  editProfileBtn.textContent = enabled ? "Cancel Edit" : "Edit Profile";
+  cancelProfileBtn.hidden = !enabled;
 }
 
-renderProfile(appUser);
-setEditMode(false);
-
-editProfileBtn.addEventListener("click", () => {
-  setEditMode(!isEditing);
-
-  if (!isEditing) {
-    renderProfile(JSON.parse(localStorage.getItem("appUser") || "null") || appUser);
-  }
-});
-
-profileForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const phone = document.getElementById("profilePhone").value.trim();
-  const city = document.getElementById("profileCity").value.trim();
-
-  if (!phone || !city) {
-    showToast("Please fill phone and city to complete your profile", "error");
+async function loadProfile() {
+  const email = localStorage.getItem("userEmail");
+  if (!email) {
+    window.location.href = "/pages/login.html";
     return;
   }
 
-  const tableName = appUser.role === "owner" ? "owners" : appUser.role === "tenant" ? "tenants" : null;
-  if (!tableName) {
-    showToast("Only owner or tenant profiles can be updated here", "error");
+  const { data: user, error: userError } = await supabaseClient
+    .from("users")
+    .select("user_id,name,email,role")
+    .eq("email", email)
+    .single();
+
+  if (userError || !user) {
+    showToast(userError?.message || "Unable to load user profile", "error");
+    window.location.href = "/pages/login.html";
     return;
   }
 
-  const { error } = await supabaseClient
-    .from(tableName)
-    .upsert({ user_id: appUser.user_id, phone, city }, { onConflict: "user_id" });
+  baseUser = user;
+  roleProfile = null;
 
-  if (error) {
-    showToast(error?.message || "Failed to update profile", "error");
-    return;
+  if (user.role === "owner") {
+    const { data: owner, error } = await supabaseClient
+      .from("owners")
+      .select("phone,address,city,owner_type")
+      .eq("user_id", user.user_id)
+      .single();
+
+    if (error) {
+      showToast(error.message || "Unable to load owner profile", "error");
+      return;
+    }
+
+    roleProfile = owner;
   }
 
-  const { data: mergedProfile, error: mergedError } = await getUserByEmail(appUser.email);
-  if (mergedError || !mergedProfile) {
-    showToast(mergedError?.message || "Failed to refresh profile", "error");
-    return;
+  if (user.role === "tenant") {
+    const { data: tenant, error } = await supabaseClient
+      .from("tenants")
+      .select("phone,occupation,permanent_address,city")
+      .eq("user_id", user.user_id)
+      .single();
+
+    if (error) {
+      showToast(error.message || "Unable to load tenant profile", "error");
+      return;
+    }
+
+    roleProfile = tenant;
   }
 
-  localStorage.setItem("appUser", JSON.stringify(mergedProfile));
-  localStorage.setItem("userId", String(mergedProfile.user_id));
-  localStorage.setItem("role", mergedProfile.role || "");
+  const merged = {
+    ...user,
+    ...(roleProfile || {})
+  };
 
-  renderProfile(mergedProfile);
-  setEditMode(false);
+  renderProfile(merged);
+  localStorage.setItem("appUser", JSON.stringify(merged));
+  localStorage.setItem("userId", String(user.user_id));
+  localStorage.setItem("role", user.role);
+  toggleEditMode(false);
+}
+
+function restoreInitialValues() {
+  renderProfile({ ...baseUser, ...(roleProfile || {}) });
+  toggleEditMode(false);
+}
+
+async function saveProfile() {
+  if (!baseUser) return;
+
+  const phone = getField("profilePhone").value.trim();
+  const city = getField("profileCity").value.trim();
+
+  if (baseUser.role === "owner") {
+    const { error } = await supabaseClient
+      .from("owners")
+      .update({
+        phone,
+        address: roleProfile?.address || null,
+        city,
+        owner_type: roleProfile?.owner_type || "Local"
+      })
+      .eq("user_id", baseUser.user_id);
+
+    if (error) {
+      showToast(error.message || "Failed to save profile", "error");
+      return;
+    }
+  }
+
+  if (baseUser.role === "tenant") {
+    const { error } = await supabaseClient
+      .from("tenants")
+      .update({
+        phone,
+        occupation: roleProfile?.occupation || null,
+        permanent_address: roleProfile?.permanent_address || null,
+        city
+      })
+      .eq("user_id", baseUser.user_id);
+
+    if (error) {
+      showToast(error.message || "Failed to save profile", "error");
+      return;
+    }
+  }
+
+  await loadProfile();
   showToast("Profile updated successfully", "success");
-});
+}
 
-logoutBtn.addEventListener("click", async () => {
-  await supabaseClient.auth.signOut();
-  localStorage.clear();
-  window.location.href = "/index.html";
-});
+if (editProfileBtn) {
+  editProfileBtn.addEventListener("click", () => {
+    toggleEditMode(true);
+  });
+}
 
-window.logoutSession = logoutSession;
+if (cancelProfileBtn) {
+  cancelProfileBtn.addEventListener("click", () => {
+    restoreInitialValues();
+  });
+}
+
+if (profileForm) {
+  profileForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveProfile();
+  });
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("user");
+    localStorage.removeItem("appUser");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("role");
+    window.location.href = "/index.html";
+  });
+}
+
+await loadProfile();
