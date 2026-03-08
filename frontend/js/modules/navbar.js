@@ -1,5 +1,3 @@
-import supabaseClient from "../core/supabaseClient.js";
-
 function getDashboardPath(role) {
   if (role === "admin") return "../dashboards/admin.html";
   if (role === "owner") return "../dashboards/owner.html";
@@ -7,45 +5,32 @@ function getDashboardPath(role) {
   return "../index.html";
 }
 
-async function renderNavbar() {
+function renderNavbar() {
   const welcome = document.getElementById("welcomeUser");
   const navRight = document.querySelector(".nav-right");
 
   if (!navRight) return;
 
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
+  const email = localStorage.getItem("userEmail");
+  const appUser = JSON.parse(localStorage.getItem("appUser") || "null");
 
-  if (!session) {
+  if (!email) {
     navRight.innerHTML = `
       <a href="../pages/login.html" class="btn btn-secondary">Login</a>
       <a href="../pages/register.html" class="btn btn-primary">Register</a>
     `;
+    if (welcome) welcome.textContent = "Welcome";
     return;
   }
 
-  const userEmail = session.user?.email?.trim().toLowerCase();
-  const { data: profile } = userEmail
-    ? await supabaseClient.from("users").select("name, role").eq("email", userEmail).single()
-    : { data: null };
-
   if (welcome) {
-    welcome.textContent = profile?.name ? `Welcome, ${profile.name}` : "Welcome";
+    welcome.textContent = appUser?.name ? `Welcome, ${appUser.name}` : "Welcome";
   }
 
   navRight.innerHTML = `
-    <a href="${getDashboardPath(profile?.role)}" class="btn btn-secondary">Dashboard</a>
-    <button id="logoutBtn" class="btn btn-danger" type="button">Logout</button>
+    <a href="${getDashboardPath(appUser?.role)}" class="btn btn-secondary">Dashboard</a>
+    <a href="../pages/profile.html" class="btn btn-primary">Profile</a>
   `;
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = "../pages/login.html";
-    });
-  }
 }
 
-void renderNavbar();
+renderNavbar();

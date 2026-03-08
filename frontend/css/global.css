@@ -61,11 +61,6 @@ h1 { font-size: clamp(1.8rem, 4vw, 3rem); }
 }
 
 .utility-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
   margin: 0;
   padding: 0.8rem 1rem;
   backdrop-filter: blur(12px);
@@ -86,7 +81,7 @@ h1 { font-size: clamp(1.8rem, 4vw, 3rem); }
   padding: clamp(1rem, 2.1vw, 1.6rem);
 }
 
-body.app-body { padding-top: 5.4rem; }
+body.app-body { padding-top: 0; }
 body.app-body.auth-page { padding-top: 0; }
 
 .section-title {
@@ -236,14 +231,6 @@ tbody tr:hover { background: #f8fafc; transition: background-color 0.2s ease; }
   border-radius: 10px;
 }
 
-
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-}
 
 .navbar-container {
   max-width: 1200px;

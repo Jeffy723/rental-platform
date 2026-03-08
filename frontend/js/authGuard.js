@@ -1,5 +1,4 @@
-import supabaseClient from "./core/supabaseClient.js";
-import { getUserByAuthId } from "./services/userService.js";
+import { getUserByEmail } from "./services/userService.js";
 
 const DASHBOARD_GUARDS = {
   "/dashboards/owner.html": "owner",
@@ -10,9 +9,9 @@ const DASHBOARD_GUARDS = {
 function updatePublicAuthButtonsVisibility() {
   const loginBtn = document.getElementById("loginBtn");
   const signupBtn = document.getElementById("signupBtn");
-  const user = JSON.parse(localStorage.getItem("user"));
+  const userEmail = localStorage.getItem("userEmail");
 
-  if (user) {
+  if (userEmail) {
     if (loginBtn) loginBtn.style.display = "none";
     if (signupBtn) signupBtn.style.display = "none";
     return;
@@ -27,42 +26,28 @@ function getDashboardRoleForPath(pathname) {
   return normalized ? DASHBOARD_GUARDS[normalized] : null;
 }
 
-async function syncSessionToLocalStorage() {
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
-
-  if (!session?.user) {
-    localStorage.removeItem("user");
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("role");
-    return null;
-  }
-
-  localStorage.setItem("user", JSON.stringify(session.user));
-  const { data: appUser } = await getUserByAuthId(session.user.id);
-
-  if (!appUser) return null;
-
-  localStorage.setItem("appUser", JSON.stringify(appUser));
-  localStorage.setItem("userId", String(appUser.user_id));
-  localStorage.setItem("role", appUser.role || "");
-  return appUser;
-}
-
-async function protectDashboardPage(appUser) {
+async function protectDashboardPage() {
   const requiredRole = getDashboardRoleForPath(window.location.pathname);
   if (!requiredRole) return;
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !appUser || appUser.role !== requiredRole) {
+  const email = localStorage.getItem("userEmail");
+  if (!email) {
     window.location.href = "/pages/login.html";
+    return;
   }
+
+  const { data: user, error } = await getUserByEmail(email);
+  if (error || !user || user.role !== requiredRole) {
+    window.location.href = "/pages/login.html";
+    return;
+  }
+
+  localStorage.setItem("appUser", JSON.stringify(user));
+  localStorage.setItem("userId", String(user.user_id));
+  localStorage.setItem("role", user.role);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const appUser = await syncSessionToLocalStorage();
-  await protectDashboardPage(appUser);
+  await protectDashboardPage();
   updatePublicAuthButtonsVisibility();
 });

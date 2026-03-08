@@ -8,7 +8,7 @@ const user = await requireUser(["owner"]);
 if (!user) throw new Error("Unauthorized");
 
 const profilePrompt = document.getElementById("ownerProfilePrompt");
-const profileComplete = Boolean(user.phone && user.city && user.profile_completed);
+const profileComplete = Boolean(user.phone && user.city);
 if (profilePrompt) profilePrompt.hidden = profileComplete;
 
 const [{ data: properties }, { data: agreements }, { data: payments }, { data: maintenance }] = await Promise.all([
