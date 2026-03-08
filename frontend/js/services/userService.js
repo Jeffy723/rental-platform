@@ -19,7 +19,7 @@ async function getRoleProfileByUserId(userId, role) {
       .from("owners")
       .select("phone,address,city,owner_type")
       .eq("user_id", Number(userId))
-      .maybeSingle();
+      .single();
 
     return { data, error };
   }
@@ -29,7 +29,7 @@ async function getRoleProfileByUserId(userId, role) {
       .from("tenants")
       .select("phone,occupation,permanent_address,city")
       .eq("user_id", Number(userId))
-      .maybeSingle();
+      .single();
 
     return { data, error };
   }

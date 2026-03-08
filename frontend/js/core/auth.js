@@ -1,14 +1,11 @@
-import supabaseClient from "./supabaseClient.js";
 import { getUserByEmail } from "../services/userService.js";
 
 function getLoginPath() {
-  return "../pages/login.html";
+  return "/pages/login.html";
 }
 
 function getIndexPath() {
-  const path = window.location.pathname;
-  if (path.includes("/pages/") || path.includes("/dashboards/")) return "../index.html";
-  return "./index.html";
+  return "/index.html";
 }
 
 export function getStoredAuthUser() {
@@ -41,6 +38,7 @@ export function storeUserSession(authUser, appUser = null) {
     localStorage.setItem("userId", String(appUser.user_id));
     localStorage.setItem("role", appUser.role || "");
     localStorage.setItem("name", appUser.name || "");
+    localStorage.setItem("userEmail", appUser.email || "");
   }
 }
 
@@ -50,27 +48,23 @@ export function clearStoredUser() {
   localStorage.removeItem("userId");
   localStorage.removeItem("role");
   localStorage.removeItem("name");
+  localStorage.removeItem("userEmail");
 }
 
 export async function syncStoredUserWithSession() {
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
-
-  if (!session?.user) {
+  const email = localStorage.getItem("userEmail");
+  if (!email) {
     clearStoredUser();
     return null;
   }
 
-  localStorage.setItem("user", JSON.stringify(session.user));
-
-  const { data: appUser } = await getUserByEmail(session.user.email);
+  const { data: appUser } = await getUserByEmail(email);
   if (!appUser) {
     clearStoredUser();
     return null;
   }
 
-  storeUserSession(session.user, appUser);
+  storeUserSession(getStoredAuthUser(), appUser);
   return appUser;
 }
 
@@ -90,7 +84,6 @@ export async function requireUser(allowedRoles = []) {
 }
 
 export async function logout() {
-  await supabaseClient.auth.signOut();
   clearStoredUser();
   window.location.href = getIndexPath();
 }
