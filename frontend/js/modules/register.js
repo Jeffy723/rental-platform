@@ -42,46 +42,52 @@ if (form) {
         throw new Error(signUpError.message || "Registration failed");
       }
 
-      if (!signUpData?.user) {
+      const authUserId = signUpData?.user?.id;
+      if (!authUserId) {
         throw new Error("Unable to create account. Please try again.");
       }
 
-      // ── Step 2: Sign in immediately to get an authenticated session ─
-      // This is required so the public.users insert satisfies RLS policies.
+      // ── Step 2: Sign in immediately to activate the auth session ───
+      // The RLS policy on public.users requires auth.uid() to match auth_user_id,
+      // so we must have an active session before inserting.
       const { error: signInError } = await supabaseClient.auth.signInWithPassword({
         email,
         password
       });
 
       if (signInError) {
-        // Auth user created but we couldn't log in yet — likely email confirmation required.
-        // Still try the insert in case RLS allows it; if not, direct them to login.
-        console.warn("Immediate sign-in after sign-up failed:", signInError.message);
+        // Email confirmation might be required — can't complete insert without session.
+        throw new Error("Account created but sign-in failed: " + signInError.message +
+          " — Please check if email confirmation is required in Supabase settings.");
       }
 
-      // ── Step 3: Insert app-level user row ──────────────────────────
-      // Note: password is intentionally NOT stored here — security is handled by Supabase Auth.
+      // ── Step 3: Insert into public.users (RLS: auth.uid() = auth_user_id) ──
+      // Note: 'password' column is kept to satisfy any NOT NULL constraint.
+      // To remove it: ALTER TABLE public.users ALTER COLUMN password DROP NOT NULL;
       const { error: profileError } = await supabaseClient.from("users").insert({
-        name:  fullName,
+        name:         fullName,
         email,
-        role
+        role,
+        auth_user_id: authUserId,
+        password      // keep if column has NOT NULL; safe to remove after making it nullable
       });
 
       if (profileError) {
-        // Sign out the partial session before showing the error
+        // Roll back: sign out and delete auth user if possible
         await supabaseClient.auth.signOut();
-        console.error("public.users insert error:", profileError);
+        console.error("users insert error:", profileError);
         throw new Error(
           profileError.code === "42501"
-            ? "Permission denied. Please ask your admin to enable user registration in the database RLS policy."
+            ? "Permission denied — Run the RLS policy SQL in Supabase SQL Editor."
             : profileError.message || "Profile setup failed"
         );
       }
 
-      // ── Step 4: Sign out so user must log in cleanly ────────────────
+      // ── Step 4: Sign out — user must log in fresh ──────────────────
+      // The DB trigger will have auto-created the owners/tenants row.
       await supabaseClient.auth.signOut();
 
-      setFlashMessage("Registration successful! Please log in.", "success", "auth");
+      setFlashMessage("Account created! Please log in.", "success", "auth");
       window.location.href = "/pages/login.html";
 
     } catch (error) {
