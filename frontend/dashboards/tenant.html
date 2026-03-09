@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tenant Dashboard | Rental Platform</title>
+  <title>Tenant Dashboard | NestFinder</title>
   <link rel="icon" href="/assets/icons/favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/forms.css" />
@@ -12,24 +12,58 @@
 <body class="app-body">
   <div class="utility-bar" id="dashboardNavbar"></div>
 
-
   <main class="dashboard-layout dashboard-layout--full">
     <section class="dashboard-shell">
-      <section id="tenantProfilePrompt" class="page-card" hidden>
-        <h3 class="section-title">Complete your profile to unlock all features.</h3>
-        <a class="btn btn-primary" href="../pages/profile.html">Complete Profile</a>
+
+      <!-- ── Complete Profile Banner ── -->
+      <section id="tenantProfilePrompt" class="complete-profile-banner" hidden>
+        <div class="cpb-icon">👤</div>
+        <div class="cpb-body">
+          <h3 class="cpb-title">Complete your profile</h3>
+          <p class="cpb-desc">Add your phone number and city to browse and rent properties.</p>
+        </div>
+        <button class="btn btn-primary cpb-btn" type="button" id="openCompleteProfileBtn">
+          Complete Profile
+        </button>
       </section>
 
+      <!-- ── Complete Profile Form ── -->
+      <section id="completeProfileForm" class="page-card" hidden>
+        <div class="cpf-head">
+          <div>
+            <h3 class="section-title">Complete your profile</h3>
+            <p class="section-subtitle">This is a one-time setup. You can update details later from the Profile page.</p>
+          </div>
+          <button class="btn btn-ghost cpf-close" type="button" id="closeCompleteProfileBtn">✕</button>
+        </div>
+        <form id="tenantCompleteForm" class="form-grid" style="margin-top:1rem">
+          <div>
+            <label for="tenantPhone">Phone Number</label>
+            <input type="tel" id="tenantPhone" placeholder="+91 00000 00000" required />
+          </div>
+          <div>
+            <label for="tenantCity">City</label>
+            <input type="text" id="tenantCity" placeholder="e.g. Bangalore" required />
+          </div>
+          <div class="full actions-row" style="margin-top:0">
+            <button class="btn btn-primary" type="submit" id="saveTenantProfileBtn">Save &amp; Continue</button>
+            <button class="btn btn-secondary" type="button" id="cancelCompleteProfileBtn">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ── KPI Stats ── -->
       <section class="page-card">
         <h1 class="section-title">Tenant Dashboard</h1>
         <div class="kpi-grid">
           <article class="kpi-card metric-card"><p class="kpi-label">Active Rental</p><p class="kpi-value" id="tenantActiveRental">0</p></article>
           <article class="kpi-card metric-card"><p class="kpi-label">Upcoming Payment</p><p class="kpi-value" id="tenantUpcomingPayment">₹0</p></article>
           <article class="kpi-card metric-card"><p class="kpi-label">Maintenance Requests</p><p class="kpi-value" id="tenantMaintenanceRequests">0</p></article>
-          <article class="kpi-card metric-card"><p class="kpi-label">Rental Agreement Status</p><p class="kpi-value" id="tenantAgreementStatus">No Active Agreement</p></article>
+          <article class="kpi-card metric-card"><p class="kpi-label">Agreement Status</p><p class="kpi-value" id="tenantAgreementStatus">No Active Agreement</p></article>
           <article class="kpi-card metric-card"><p class="kpi-label">Recent Notifications</p><p class="kpi-value" id="tenantRecentNotifications">0</p></article>
         </div>
       </section>
+
     </section>
   </main>
 

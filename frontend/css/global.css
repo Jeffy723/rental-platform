@@ -186,36 +186,29 @@ h4 { font-size: 1rem; }
   flex-shrink: 0;
 }
 
-/* Avatar chip */
-.app-profile-link {
+/* Compact avatar button (top-right corner, no redundant 'Profile' label) */
+.app-avatar-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
   color: var(--text);
-  font-weight: 500;
-  font-size: 0.875rem;
-  border: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 0.82rem;
   border-radius: var(--radius-full);
-  padding: 0.3rem 0.8rem 0.3rem 0.3rem;
-  background: var(--surface);
+  padding: 0.25rem;
+  background: transparent;
   cursor: pointer;
-  transition: all 0.18s ease;
-  box-shadow: var(--shadow-xs);
+  transition: opacity 0.18s ease;
+  text-decoration: none;
 }
-.app-profile-link:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-soft);
-  box-shadow: var(--shadow);
+.app-avatar-btn:hover { opacity: 0.8; color: var(--text); }
+.app-avatar-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--text);
 }
-.app-profile-meta {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.05rem;
-  line-height: 1.2;
-}
-.app-profile-name { font-weight: 600; color: var(--text); }
-.app-profile-role { font-size: 0.72rem; color: var(--text-secondary); text-transform: capitalize; }
 
 /* Avatar circle */
 .app-avatar {
@@ -804,6 +797,41 @@ tbody tr:last-child td { border-bottom: 0; }
    Is-invisible helper
 ───────────────────────────────────────── */
 .is-invisible { visibility: hidden; pointer-events: none; }
+
+/* ─────────────────────────────────────────
+   Complete-Profile Banner (Dashboard)
+───────────────────────────────────────── */
+.complete-profile-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.cpb-icon { font-size: 1.6rem; flex-shrink: 0; }
+.cpb-body { flex: 1; min-width: 0; }
+.cpb-title { font-size: 1rem; font-weight: 700; color: #92400e; margin: 0 0 0.2rem; }
+.cpb-desc  { font-size: 0.88rem; color: #b45309; margin: 0; line-height: 1.5; }
+.cpb-btn   { flex-shrink: 0; }
+
+/* Complete-profile inline form */
+.cpf-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+.cpf-close {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 0.6rem;
+  font-size: 0.85rem;
+}
 
 /* ─────────────────────────────────────────
    Responsive – 1200px

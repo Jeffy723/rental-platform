@@ -1,16 +1,65 @@
 import { requireUser } from "../core/auth.js";
+import supabaseClient from "../core/supabaseClient.js";
 import { listProperties } from "../services/propertyService.js";
 import { listAgreements } from "../services/agreementService.js";
 import { listPayments } from "../services/paymentService.js";
 import { listMaintenanceRequests } from "../services/maintenanceService.js";
+import { showToast } from "../utils/helpers.js";
 
 const user = await requireUser(["owner"]);
-if (!user) return;
+if (!user) throw new Error("Unauthorised");
 
-const profilePrompt = document.getElementById("ownerProfilePrompt");
+// ── Profile completion banner ─────────────────────────────────
+const profilePrompt      = document.getElementById("ownerProfilePrompt");
+const completeProfileForm = document.getElementById("completeProfileForm");
+const openBtn            = document.getElementById("openCompleteProfileBtn");
+const closeBtn           = document.getElementById("closeCompleteProfileBtn");
+const cancelBtn          = document.getElementById("cancelCompleteProfileBtn");
+const ownerForm          = document.getElementById("ownerCompleteForm");
+
 const profileComplete = Boolean(user.phone && user.city);
-if (profilePrompt) profilePrompt.hidden = profileComplete;
 
+function showBanner()  { profilePrompt.hidden = true;  completeProfileForm.hidden = false; }
+function hideBanner()  { profilePrompt.hidden = true;  completeProfileForm.hidden = true;  }
+function openForm()    { profilePrompt.hidden = true;  completeProfileForm.hidden = false; }
+function closeForm()   { profilePrompt.hidden = !profileComplete; completeProfileForm.hidden = true; }
+
+if (!profileComplete && profilePrompt) profilePrompt.hidden = false;
+
+openBtn?.addEventListener("click",  openForm);
+closeBtn?.addEventListener("click", closeForm);
+cancelBtn?.addEventListener("click", closeForm);
+
+ownerForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const phone = document.getElementById("ownerPhone").value.trim();
+  const city  = document.getElementById("ownerCity").value.trim();
+
+  const saveBtn = document.getElementById("saveOwnerProfileBtn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving…";
+
+  const { error } = await supabaseClient
+    .from("owners")
+    .upsert({ user_id: user.user_id, phone, city }, { onConflict: "user_id" });
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = "Save & Continue";
+
+  if (error) {
+    showToast(error.message || "Failed to save profile", "error");
+    return;
+  }
+
+  // Update local cache so banner won't reappear on next page load
+  const stored = JSON.parse(localStorage.getItem("appUser") || "{}");
+  localStorage.setItem("appUser", JSON.stringify({ ...stored, phone, city }));
+
+  showToast("Profile saved ✓", "success");
+  hideBanner();   // permanently hide both banner and form
+});
+
+// ── Dashboard stats ───────────────────────────────────────────
 const [{ data: properties }, { data: agreements }, { data: payments }, { data: maintenance }] = await Promise.all([
   listProperties(),
   listAgreements(),
@@ -18,21 +67,21 @@ const [{ data: properties }, { data: agreements }, { data: payments }, { data: m
   listMaintenanceRequests()
 ]);
 
-const ownerProperties = (properties || []).filter((item) => item.owners?.user_id === user.user_id);
-const ownerPropertyIds = new Set(ownerProperties.map((item) => item.property_id));
-const ownerAgreements = (agreements || []).filter((item) => ownerPropertyIds.has(item.property_id));
-const activeAgreements = ownerAgreements.filter((item) => item.agreement_status === "Active");
-const ownerAgreementIds = new Set(ownerAgreements.map((item) => item.agreement_id));
-const ownerPayments = (payments || []).filter((item) => ownerAgreementIds.has(item.agreement_id));
-const ownerMaintenance = (maintenance || []).filter((item) => ownerAgreementIds.has(item.agreement_id));
+const ownerProperties    = (properties  || []).filter((item) => item.owners?.user_id === user.user_id);
+const ownerPropertyIds   = new Set(ownerProperties.map((item) => item.property_id));
+const ownerAgreements    = (agreements  || []).filter((item) => ownerPropertyIds.has(item.property_id));
+const activeAgreements   = ownerAgreements.filter((item) => item.agreement_status === "Active");
+const ownerAgreementIds  = new Set(ownerAgreements.map((item) => item.agreement_id));
+const ownerPayments      = (payments    || []).filter((item) => ownerAgreementIds.has(item.agreement_id));
+const ownerMaintenance   = (maintenance || []).filter((item) => ownerAgreementIds.has(item.agreement_id));
 
 const currentMonth = new Date().toISOString().slice(0, 7);
 const monthlyIncome = ownerPayments
   .filter((item) => String(item.payment_date || "").startsWith(currentMonth))
   .reduce((sum, item) => sum + Number(item.amount_paid || 0), 0);
 
-document.getElementById("ownerTotalProperties").textContent = String(ownerProperties.length);
-document.getElementById("ownerActiveAgreements").textContent = String(activeAgreements.length);
-document.getElementById("ownerMonthlyIncome").textContent = `₹${monthlyIncome.toLocaleString()}`;
+document.getElementById("ownerTotalProperties").textContent    = String(ownerProperties.length);
+document.getElementById("ownerActiveAgreements").textContent   = String(activeAgreements.length);
+document.getElementById("ownerMonthlyIncome").textContent      = `₹${monthlyIncome.toLocaleString()}`;
 document.getElementById("ownerMaintenanceRequests").textContent = String(ownerMaintenance.length);
-document.getElementById("ownerRecentActivity").textContent = String(activeAgreements.length + ownerMaintenance.length);
+document.getElementById("ownerRecentActivity").textContent     = String(activeAgreements.length + ownerMaintenance.length);

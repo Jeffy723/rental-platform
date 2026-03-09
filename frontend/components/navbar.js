@@ -31,45 +31,22 @@ function markActiveLinks(root) {
 }
 
 function populateUserChip(container, user) {
-  const avatarEl   = container.querySelector("#navAvatar");
-  const nameEl     = container.querySelector("#navUserName");
-  const roleEl     = container.querySelector("#navUserRole");
-
   if (!user) return;
+  const avatarEl = container.querySelector("#navAvatar");
+  const nameEl   = container.querySelector("#navUserName");
   if (avatarEl) avatarEl.textContent = getUserInitials(user.name || user.email || "U");
-  if (nameEl)   nameEl.textContent   = user.name  || user.email || "User";
-  if (roleEl)   roleEl.textContent   = user.role  || "";
+  if (nameEl)   nameEl.textContent   = user.name || user.email || "User";
 }
 
 function wireHamburger(container) {
   const toggle = container.querySelector("#navToggle");
   const links  = container.querySelector("#appNavLinks");
   if (!toggle || !links) return;
-
   toggle.addEventListener("click", () => {
     const isOpen = links.classList.toggle("nav-open");
     toggle.textContent = isOpen ? "✕" : "☰";
     toggle.setAttribute("aria-expanded", String(isOpen));
   });
-}
-
-async function loadFooter(prefix) {
-  const footerHost = document.getElementById("appFooter");
-  if (!footerHost) return;
-
-  try {
-    const response = await fetch(`${prefix}components/footer.html`);
-    if (!response.ok) return;
-    footerHost.innerHTML = await response.text();
-    footerHost.querySelectorAll("a[href^='../']").forEach((link) => {
-      const href = link.getAttribute("href");
-      link.setAttribute("href", prefix + href.replace(/^\.\.\//, ""));
-    });
-    const yearNode = footerHost.querySelector("[data-current-year]");
-    if (yearNode) yearNode.textContent = String(new Date().getFullYear());
-  } catch {
-    // intentionally no-op
-  }
 }
 
 async function loadNavbar() {
@@ -88,7 +65,6 @@ async function loadNavbar() {
 
   container.innerHTML = await response.text();
 
-  // Resolve data-href → real href
   container.querySelectorAll("[data-href]").forEach((node) => {
     const href = node.getAttribute("data-href");
     node.setAttribute("href", `${prefix}${href}`);
@@ -98,7 +74,7 @@ async function loadNavbar() {
   markActiveLinks(container);
   populateUserChip(container, user);
   wireHamburger(container);
-  await loadFooter(prefix);
+  // Footer intentionally NOT loaded on authenticated app pages
 }
 
 void loadNavbar();
