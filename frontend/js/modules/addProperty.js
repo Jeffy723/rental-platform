@@ -225,37 +225,52 @@ form.addEventListener("submit", async (e) => {
     for (let i = 0; i < imageQueue.length; i++) {
       const { file } = imageQueue[i];
       const id = String(i);
-      updateProgress(id, 30);
+      updateProgress(id, 20);
 
-      const ext      = file.name.split(".").pop();
+      const ext      = file.name.split(".").pop().toLowerCase();
       const fileName = `${propertyId}_${Date.now()}_${i}.${ext}`;
-      const filePath = `properties/${fileName}`;
+      const filePath = `properties/${propertyId}/${fileName}`;
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabaseClient.storage
+      console.log(`[Image ${i+1}] Uploading → storage path:`, filePath);
+      updateProgress(id, 40);
+
+      // ── Upload to Supabase Storage ──────────────────────────
+      const { data: uploadData, error: uploadError } = await supabaseClient.storage
         .from("property-images")
-        .upload(filePath, file, { upsert: false });
+        .upload(filePath, file, { upsert: true }); // upsert:true avoids duplicate-path 400
 
       if (uploadError) {
-        showToast(`Failed to upload ${file.name}: ${uploadError.message}`, "error");
+        console.error(`[Image ${i+1}] STORAGE UPLOAD FAILED:`, uploadError);
+        showToast(`Upload failed: ${uploadError.message}`, "error");
         updateProgress(id, 100, true);
         continue;
       }
 
+      console.log(`[Image ${i+1}] Storage upload OK:`, uploadData?.path);
       updateProgress(id, 70);
 
-      // Get public URL
+      // ── Get public URL (sync, no network call) ──────────────
       const { data: urlData } = supabaseClient.storage
         .from("property-images")
         .getPublicUrl(filePath);
 
-      // Insert into property_images table
-      const { error: insertError } = await supabaseClient
+      const imageUrl = urlData?.publicUrl;
+      console.log(`[Image ${i+1}] Public URL:`, imageUrl);
+      updateProgress(id, 85);
+
+      // ── Insert URL into property_images table ───────────────
+      console.log(`[Image ${i+1}] Inserting into DB:`, { property_id: Number(propertyId), image_url: imageUrl });
+
+      const { data: insertData, error: insertError } = await supabaseClient
         .from("property_images")
-        .insert([{ property_id: propertyId, image_url: urlData.publicUrl }]);
+        .insert({ property_id: Number(propertyId), image_url: imageUrl })
+        .select();
 
       if (insertError) {
-        showToast(`Image saved but URL insert failed: ${insertError.message}`, "error");
+        console.error(`[Image ${i+1}] DB INSERT FAILED:`, insertError);
+        showToast(`DB insert failed: ${insertError.message} (code: ${insertError.code})`, "error");
+      } else {
+        console.log(`[Image ${i+1}] DB insert OK:`, insertData);
       }
 
       updateProgress(id, 100, true);
