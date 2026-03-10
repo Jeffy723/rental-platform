@@ -2,13 +2,16 @@ import { requireUser } from "../core/auth.js";
 import { listProperties, getPropertiesByOwnerUserId, deleteProperty, updateProperty, PROPERTY_IMAGE_PLACEHOLDER } from "../services/propertyService.js";
 import { formatCurrency, showToast } from "../utils/helpers.js";
 
-const user = await requireUser(["admin", "owner", "tenant"]);
-if (!user) return;
+// Wrap everything in an async IIFE so top-level `return` is legal
+(async () => {
 
-const cityFilter = document.getElementById("cityFilter");
-const statusFilter = document.getElementById("statusFilter");
-const searchInput = document.getElementById("searchInput");
-const searchBtn = document.getElementById("searchBtn");
+const user = await requireUser(["admin", "owner", "tenant"]);
+if (!user) return; // valid inside an async IIFE
+
+const cityFilter    = document.getElementById("cityFilter");
+const statusFilter  = document.getElementById("statusFilter");
+const searchInput   = document.getElementById("searchInput");
+const searchBtn     = document.getElementById("searchBtn");
 const propertyCards = document.getElementById("propertyCards");
 
 function getPropertyThumbnail(property) {
@@ -18,7 +21,7 @@ function getPropertyThumbnail(property) {
 function statusClass(status) {
   const value = (status || "").toLowerCase();
   if (value === "available") return "status-pill status-available";
-  if (value === "rented") return "status-pill status-rented";
+  if (value === "rented")    return "status-pill status-rented";
   return "status-pill status-inactive";
 }
 
@@ -28,15 +31,12 @@ function getRelevantDetails(property) {
 
   if (property.bedrooms    != null) parts.push(`🛏 ${property.bedrooms} Bed`);
   if (property.bathrooms   != null) parts.push(`🚿 ${property.bathrooms} Bath`);
-  if (property.office_rooms != null && type === "office") parts.push(`🏢 ${property.office_rooms} Rooms`);
-  if (property.shop_units  != null && ["shop","commercial"].includes(type)) parts.push(`🏪 ${property.shop_units} Units`);
-  if (property.area_sqft)  parts.push(`📐 ${property.area_sqft} sqft`);
+  if (property.office_rooms != null && type === "office")                       parts.push(`🏢 ${property.office_rooms} Rooms`);
+  if (property.shop_units   != null && ["shop","commercial"].includes(type))    parts.push(`🏪 ${property.shop_units} Units`);
+  if (property.area_sqft)   parts.push(`📐 ${property.area_sqft} sqft`);
 
   return parts.length ? parts.join(" &nbsp;·&nbsp; ") : "—";
 }
-
-
-// property_images are already joined via PROPERTY_SELECT_QUERY – no extra fetch needed
 
 function canEdit(property) {
   return user.role === "owner" && Number(property.owners?.user_id) === Number(user.user_id);
@@ -91,18 +91,18 @@ function renderCards(properties) {
         <h3>No properties found</h3>
         <p>Adjust your filters or add a property to continue.</p>
         ${user.role === "owner"
-    ? "<a class='btn btn-primary' href='./add-property.html'>Add Property</a>"
-    : "<button class='btn btn-primary' type='button' id='resetPropertyFilters'>Reset Filters</button>"}
+          ? "<a class='btn btn-primary' href='./add-property.html'>Add Property</a>"
+          : "<button class='btn btn-primary' type='button' id='resetPropertyFilters'>Reset Filters</button>"}
       </div>
     `;
     return;
   }
 
   propertyCards.innerHTML = properties.map((property) => {
-    const imageUrl   = getPropertyThumbnail(property);
-    const ownerName  = property.owners?.users?.name || "Owner";
-    const typeLabel  = property.property_type || "";
-    const specs      = getRelevantDetails(property);
+    const imageUrl  = getPropertyThumbnail(property);
+    const ownerName = property.owners?.users?.name || "Owner";
+    const typeLabel = property.property_type || "";
+    const specs     = getRelevantDetails(property);
 
     const ownerActions = `
       <a class="btn btn-primary" href="./property-details.html?id=${property.property_id}">View</a>
@@ -112,13 +112,16 @@ function renderCards(properties) {
 
     const tenantActions = `
       <a class="btn btn-primary" href="./property-details.html?id=${property.property_id}">View</a>
-      ${property.owners?.users?.email ? `<a class="btn btn-secondary" href="mailto:${property.owners.users.email}">Contact Owner</a>` : ""}
+      ${property.owners?.users?.email
+        ? `<a class="btn btn-secondary" href="mailto:${property.owners.users.email}">Contact Owner</a>`
+        : ""}
     `;
 
     return `
       <article class="property-card card">
         <div class="property-img-wrap">
-          <img class="property-img" src="${imageUrl}"
+          <img class="property-img"
+               src="${imageUrl}"
                alt="${property.title || "Property"}"
                onerror="this.src='${PROPERTY_IMAGE_PLACEHOLDER}'" />
           ${typeLabel ? `<span class="property-type-badge">${typeLabel}</span>` : ""}
@@ -142,10 +145,7 @@ function renderCards(properties) {
 async function handleDelete(propertyId) {
   if (!confirm("Are you sure you want to delete this property?")) return;
   const { error } = await deleteProperty(propertyId);
-  if (error) {
-    showToast("Failed to delete property", "error");
-    return;
-  }
+  if (error) { showToast("Failed to delete property", "error"); return; }
   showToast("Property deleted successfully", "success");
   localStorage.setItem("propertiesUpdatedAt", String(Date.now()));
   fetchProperties();
@@ -160,35 +160,33 @@ async function handleEdit(propertyId) {
   if (!newRent) return;
 
   const { error } = await updateProperty(propertyId, {
-    title: newTitle.trim(),
-    city: newCity.trim(),
+    title:       newTitle.trim(),
+    city:        newCity.trim(),
     rent_amount: Number(newRent)
   });
 
-  if (error) {
-    showToast("Failed to update property", "error");
-    return;
-  }
+  if (error) { showToast("Failed to update property", "error"); return; }
   showToast("Property updated successfully", "success");
   fetchProperties();
 }
 
+// ── Event listeners ───────────────────────────────────────────
 searchBtn?.addEventListener("click", fetchProperties);
 
-// Allow pressing Enter in text inputs to trigger search
 [searchInput, cityFilter].forEach((input) => {
   input?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); fetchProperties(); }
   });
 });
+
 propertyCards.addEventListener("click", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLButtonElement)) return;
 
   if (target.id === "resetPropertyFilters") {
-    cityFilter.value = "";
-    statusFilter.value = "";
-    if (searchInput) searchInput.value = "";
+    if (cityFilter)   cityFilter.value   = "";
+    if (statusFilter) statusFilter.value = "";
+    if (searchInput)  searchInput.value  = "";
     fetchProperties();
     return;
   }
@@ -197,18 +195,19 @@ propertyCards.addEventListener("click", async (event) => {
   if (!propertyId) return;
 
   if (target.classList.contains("deleteBtn")) await handleDelete(propertyId);
-  if (target.classList.contains("editBtn")) await handleEdit(propertyId);
+  if (target.classList.contains("editBtn"))   await handleEdit(propertyId);
 });
 
+// ── Init ─────────────────────────────────────────────────────
 fetchProperties();
 
-if (user.role === "tenant") {
-  statusFilter.value = "Available";
+if (user.role === "tenant" && statusFilter) {
+  statusFilter.value    = "Available";
   statusFilter.disabled = true;
 }
 
 window.addEventListener("storage", (event) => {
-  if (event.key === "propertiesUpdatedAt") {
-    fetchProperties();
-  }
+  if (event.key === "propertiesUpdatedAt") fetchProperties();
 });
+
+})(); // end IIFE
