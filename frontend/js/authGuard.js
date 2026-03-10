@@ -7,22 +7,47 @@ const ROUTE_GUARDS = {
   "/pages/browse-rentals.html": "tenant"
 };
 
+function getPropertyDetailsSource(pathname) {
+  if (!pathname.endsWith("/pages/property-details.html")) return "";
+  return new URLSearchParams(window.location.search).get("source") || "";
+}
+
 function getRequiredRoleForPath(pathname) {
+  const source = getPropertyDetailsSource(pathname);
+  if (source === "browse-rentals") return "tenant";
+  if (source === "owner-dashboard") return "owner";
+  if (source === "property-list") return "admin";
+
   const normalized = Object.keys(ROUTE_GUARDS).find((path) => pathname.endsWith(path));
   return normalized ? ROUTE_GUARDS[normalized] : null;
 }
 
 function getRouteHeaderMode(pathname) {
   if (pathname.endsWith("/pages/discover.html")) {
-    return { guestOnly: true, source: "discover" };
+    return { guestOnly: true, source: "discover", useDashboardNavbar: false };
   }
 
   if (pathname.endsWith("/pages/property-details.html")) {
-    const source = new URLSearchParams(window.location.search).get("source") || "";
-    return { guestOnly: source === "discover", source };
+    const source = getPropertyDetailsSource(pathname);
+    return {
+      guestOnly: source === "discover",
+      source,
+      useDashboardNavbar: ["browse-rentals", "owner-dashboard", "property-list"].includes(source)
+    };
   }
 
-  return { guestOnly: false, source: "" };
+  return { guestOnly: false, source: "", useDashboardNavbar: false };
+}
+
+function applyRouteNavigationMode({ useDashboardNavbar }, user) {
+  const dashboardNavbar = document.getElementById("dashboardNavbar");
+  const publicHeader = document.getElementById("publicPropertyHeader");
+
+  if (!dashboardNavbar && !publicHeader) return;
+
+  const showDashboardNavbar = Boolean(useDashboardNavbar && user);
+  if (dashboardNavbar) dashboardNavbar.hidden = !showDashboardNavbar;
+  if (publicHeader) publicHeader.hidden = showDashboardNavbar;
 }
 
 function getNavRefs() {
@@ -99,5 +124,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncStoredUserWithSession();
   }
 
+  applyRouteNavigationMode(getRouteHeaderMode(pathname), getStoredUser());
   updatePublicAuthButtonsVisibility();
 });

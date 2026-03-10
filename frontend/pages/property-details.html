@@ -10,9 +10,10 @@
   <link rel="stylesheet" href="../css/forms.css" />
 </head>
 <body class="app-body">
+  <div class="utility-bar" id="dashboardNavbar" hidden></div>
 
   <!-- Simple public-friendly nav (no dashboard redirect) -->
-  <header class="utility-bar">
+  <header class="utility-bar" id="publicPropertyHeader">
     <nav class="landing-nav shell-panel">
       <a class="brand-mark" href="../index.html">🏠 NestFinder</a>
       <div class="landing-links">
@@ -35,5 +36,6 @@
 <script type="module" src="../js/authGuard.js"></script>
 <script type="module" src="../js/core/toast.js"></script>
 <script type="module" src="../js/modules/propertyDetails.js"></script>
+<script type="module" src="../components/navbar.js"></script>
 </body>
 </html>
