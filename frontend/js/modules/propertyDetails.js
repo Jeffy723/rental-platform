@@ -1,8 +1,7 @@
 import { getStoredUser, syncStoredUserWithSession } from "../core/auth.js";
 import { formatCurrency } from "../utils/helpers.js";
 import {
-  listProperties,
-  listPropertyImagesForPropertyId,
+  getPropertyById,
   PROPERTY_IMAGE_PLACEHOLDER
 } from "../services/propertyService.js";
 import supabaseClient from "../core/supabaseClient.js";
@@ -11,11 +10,12 @@ const details = document.getElementById("propertyDetails");
 const params = new URLSearchParams(window.location.search);
 const propertyId = Number(params.get("id"));
 const source = params.get("source") || "discover";
+
 await syncStoredUserWithSession();
 const currentUser = getStoredUser();
 
 async function getOwnerIdForCurrentUser() {
-  if (!currentUser?.user_id) return null;
+  if (!currentUser?.user_id || currentUser.role !== "owner") return null;
 
   const { data } = await supabaseClient
     .from("owners")
@@ -54,33 +54,59 @@ function getBackLink() {
   };
 }
 
+function renderEmptyState(message) {
+  if (!details) return;
+  details.innerHTML = `<div class="empty-state card"><h3>${message}</h3></div>`;
+}
+
+function buildSpecs(property) {
+  const type = String(property.property_type || "").toLowerCase();
+  const specs = [];
+
+  if (property.bedrooms != null) specs.push(`${property.bedrooms} Bedroom${property.bedrooms !== 1 ? "s" : ""}`);
+  if (property.bathrooms != null) specs.push(`${property.bathrooms} Bathroom${property.bathrooms !== 1 ? "s" : ""}`);
+  if (property.office_rooms != null && type === "office") specs.push(`${property.office_rooms} Office Room${property.office_rooms !== 1 ? "s" : ""}`);
+  if (property.shop_units != null && ["shop", "commercial"].includes(type)) specs.push(`${property.shop_units} Shop Unit${property.shop_units !== 1 ? "s" : ""}`);
+  if (property.area_sqft) specs.push(`${property.area_sqft} sqft`);
+
+  return specs;
+}
+
 async function loadProperty() {
+  if (!details) return;
+
   if (!propertyId) {
-    details.innerHTML = "<div class='empty-state'>Invalid property ID.</div>";
+    renderEmptyState("Invalid property ID.");
     return;
   }
 
-  const { data: rows, error } = await listProperties();
+  const [{ data: property, error }, myOwnerId] = await Promise.all([
+    getPropertyById(propertyId),
+    getOwnerIdForCurrentUser()
+  ]);
+
   if (error) {
-    details.innerHTML = "<div class='empty-state'>Unable to load property details.</div>";
+    renderEmptyState("Unable to load property details.");
     return;
   }
 
-  const property = (rows || []).find((row) => row.property_id === propertyId);
   if (!property) {
-    details.innerHTML = "<div class='empty-state'>Property not found.</div>";
+    renderEmptyState("Property not found.");
     return;
   }
 
-  const { data: propertyImages } = await listPropertyImagesForPropertyId(property.property_id);
-  const resolvedImages = (propertyImages || []).map((row) => ({ image_url: row.image_url }));
-  property.property_images = resolvedImages;
-
-  const gallery = resolvedImages.length
-    ? resolvedImages.map((img) => (
-      `<img src="${img.image_url}" alt="property image" onerror="this.src='${PROPERTY_IMAGE_PLACEHOLDER}'" />`
-    )).join("")
-    : `<img src="${PROPERTY_IMAGE_PLACEHOLDER}" alt="property image" />`;
+  const resolvedImages = property.property_images || [];
+  const primaryImage = resolvedImages[0]?.image_url || PROPERTY_IMAGE_PLACEHOLDER;
+  const gallery = resolvedImages.length > 1
+    ? resolvedImages.map((img, index) => `
+        <img
+          src="${img.image_url}"
+          alt="${property.title || "Property"} image ${index + 1}"
+          loading="lazy"
+          onerror="this.src='${PROPERTY_IMAGE_PLACEHOLDER}'"
+        />
+      `).join("")
+    : "";
 
   try {
     const recentlyViewed = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
@@ -89,42 +115,35 @@ async function loadProperty() {
       localStorage.setItem("recentlyViewed", JSON.stringify(recentlyViewed.slice(0, 8)));
     }
   } catch {
-    // no-op
+    // Ignore local storage parse errors.
   }
 
-  const myOwnerId = await getOwnerIdForCurrentUser();
   const isOwner = myOwnerId != null && myOwnerId === property.owner_id;
   const ownerEmail = property.owners?.users?.email || "";
   const contactBtn = (!isOwner && ownerEmail)
     ? `<a class="btn btn-primary" href="mailto:${ownerEmail}">Contact Owner</a>`
     : "";
   const backLink = getBackLink();
-
-  const type = String(property.property_type || "").toLowerCase();
-  const specs = [];
-  if (property.bedrooms != null) specs.push(`${property.bedrooms} Bedroom${property.bedrooms !== 1 ? "s" : ""}`);
-  if (property.bathrooms != null) specs.push(`${property.bathrooms} Bathroom${property.bathrooms !== 1 ? "s" : ""}`);
-  if (property.office_rooms != null && type === "office") specs.push(`${property.office_rooms} Office Room${property.office_rooms !== 1 ? "s" : ""}`);
-  if (property.shop_units != null && ["shop", "commercial"].includes(type)) specs.push(`${property.shop_units} Shop Unit${property.shop_units !== 1 ? "s" : ""}`);
-  if (property.area_sqft) specs.push(`${property.area_sqft} sqft`);
-
+  const specs = buildSpecs(property);
   const specsHtml = specs.length
     ? `<ul class="property-spec-list">${specs.map((item) => `<li>${item}</li>`).join("")}</ul>`
     : "";
 
   details.innerHTML = `
-    <img style="width:100%;max-height:420px;object-fit:cover;border-radius:var(--radius-md);"
-         src="${property.property_images?.[0]?.image_url || PROPERTY_IMAGE_PLACEHOLDER}"
-         alt="${property.title || "Property"}"
-         onerror="this.src='${PROPERTY_IMAGE_PLACEHOLDER}'" />
+    <img
+      style="width:100%;max-height:420px;object-fit:cover;border-radius:var(--radius-md);"
+      src="${primaryImage}"
+      alt="${property.title || "Property"}"
+      onerror="this.src='${PROPERTY_IMAGE_PLACEHOLDER}'"
+    />
 
     <div style="margin-top:1.25rem" class="split-grid">
       <div>
         <h2>${property.title || "Property"}</h2>
-        <p class="section-subtitle">Location: ${[property.address, property.city].filter(Boolean).join(", ")}</p>
+        <p class="section-subtitle">Location: ${[property.address, property.city].filter(Boolean).join(", ") || "Address not available"}</p>
         ${property.allowed_usage ? `<p><strong>Usage:</strong> ${property.allowed_usage}</p>` : ""}
         ${specsHtml}
-        ${resolvedImages.length > 1 ? `<div class="gallery-preview" style="margin-top:1rem">${gallery}</div>` : ""}
+        ${gallery ? `<div class="gallery-preview" style="margin-top:1rem">${gallery}</div>` : ""}
       </div>
 
       <div class="panel card">
@@ -142,4 +161,4 @@ async function loadProperty() {
   `;
 }
 
-loadProperty();
+await loadProperty();

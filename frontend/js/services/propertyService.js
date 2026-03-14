@@ -4,6 +4,11 @@ const PROPERTY_IMAGE_BUCKET = "property-images";
 
 const RESIDENTIAL_PROPERTY_TYPES = new Set(["apartment", "house", "studio"]);
 const COMMERCIAL_PROPERTY_TYPES = new Set(["office", "shop", "commercial"]);
+const PROPERTY_SELECT_QUERY = `
+  *,
+  owners(user_id,users(name,email)),
+  property_images(image_id,image_url)
+`;
 
 export const PROPERTY_IMAGE_PLACEHOLDER = "https://images.unsplash.com/photo-1560184897-ae75f418493e";
 
@@ -20,11 +25,72 @@ export function deriveAllowedUsage({ property_type, bedrooms = 0, bathrooms = 0,
   return "Residential";
 }
 
-const PROPERTY_SELECT_QUERY = `
-  *,
-  owners(user_id,users(name,email)),
-  property_images(image_url)
-`;
+function isAbsoluteUrl(value) {
+  return /^https?:\/\//i.test(value);
+}
+
+function resolvePropertyImageUrl(imageUrl) {
+  const rawValue = String(imageUrl || "").trim();
+  if (!rawValue) return "";
+
+  const publicUrlMarker = `/storage/v1/object/public/${PROPERTY_IMAGE_BUCKET}/`;
+  if (isAbsoluteUrl(rawValue)) {
+    if (!rawValue.includes(publicUrlMarker)) return rawValue;
+    return rawValue;
+  }
+
+  let filePath = rawValue;
+  if (filePath.startsWith(`${PROPERTY_IMAGE_BUCKET}/`)) {
+    filePath = filePath.slice(PROPERTY_IMAGE_BUCKET.length + 1);
+  }
+
+  const { data } = supabaseClient.storage
+    .from(PROPERTY_IMAGE_BUCKET)
+    .getPublicUrl(filePath);
+
+  return data?.publicUrl || rawValue;
+}
+
+function normalizeImageRows(images = []) {
+  if (!Array.isArray(images)) return [];
+
+  return images
+    .map((image) => ({
+      ...image,
+      image_url: resolvePropertyImageUrl(image?.image_url)
+    }))
+    .filter((image) => Boolean(image.image_url))
+    .sort((left, right) => Number(left.image_id || 0) - Number(right.image_id || 0));
+}
+
+function normalizePropertyRecord(property) {
+  if (!property) return property;
+
+  return {
+    ...property,
+    property_images: normalizeImageRows(property.property_images)
+  };
+}
+
+async function runPropertyListQuery(query) {
+  const { data, error } = await query;
+  if (error) return { data: null, error };
+
+  return {
+    data: (data || []).map((property) => normalizePropertyRecord(property)),
+    error: null
+  };
+}
+
+async function runSinglePropertyQuery(query) {
+  const { data, error } = await query;
+  if (error) return { data: null, error };
+
+  return {
+    data: data ? normalizePropertyRecord(data) : null,
+    error: null
+  };
+}
 
 export async function listProperties({ city = "", status = "", search = "", maxBudget = 0 } = {}) {
   let query = supabaseClient
@@ -37,7 +103,17 @@ export async function listProperties({ city = "", status = "", search = "", maxB
   if (search) query = query.or(`title.ilike.%${search}%,city.ilike.%${search}%,property_type.ilike.%${search}%`);
   if (maxBudget) query = query.lte("rent_amount", maxBudget);
 
-  return query;
+  return runPropertyListQuery(query);
+}
+
+export async function getPropertyById(propertyId) {
+  return runSinglePropertyQuery(
+    supabaseClient
+      .from("properties")
+      .select(PROPERTY_SELECT_QUERY)
+      .eq("property_id", Number(propertyId))
+      .maybeSingle()
+  );
 }
 
 export async function getPropertiesByOwnerUserId(userId, { city = "", status = "", search = "" } = {}) {
@@ -65,24 +141,24 @@ export async function getPropertiesByOwnerUserId(userId, { city = "", status = "
   if (status) query = query.eq("status", status);
   if (search) query = query.or(`title.ilike.%${search}%,city.ilike.%${search}%,property_type.ilike.%${search}%`);
 
-  return query;
+  return runPropertyListQuery(query);
 }
 
 export async function getPropertiesByOwner(ownerId) {
-  return supabaseClient
-    .from("properties")
-    .select(PROPERTY_SELECT_QUERY)
-    .eq("owner_id", ownerId)
-    .order("property_id", { ascending: false });
+  return runPropertyListQuery(
+    supabaseClient
+      .from("properties")
+      .select(PROPERTY_SELECT_QUERY)
+      .eq("owner_id", ownerId)
+      .order("property_id", { ascending: false })
+  );
 }
 
 export async function createProperty(payload, imageFiles = []) {
-  // Get authenticated user id from auth session (not localStorage which can be stale)
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const authUid = sessionData?.session?.user?.id;
   if (!authUid) return { data: null, error: new Error("Not authenticated") };
 
-  // Look up public.users row to get user_id integer
   const { data: publicUser, error: publicUserError } = await supabaseClient
     .from("users")
     .select("user_id")
@@ -93,12 +169,10 @@ export async function createProperty(payload, imageFiles = []) {
     return { data: null, error: publicUserError || new Error("User not found") };
   }
 
-  const currentUserId = publicUser.user_id;
-
   const { data: existingOwner, error: ownerLookupError } = await supabaseClient
     .from("owners")
     .select("owner_id")
-    .eq("user_id", currentUserId)
+    .eq("user_id", publicUser.user_id)
     .maybeSingle();
 
   if (ownerLookupError) {
@@ -106,11 +180,10 @@ export async function createProperty(payload, imageFiles = []) {
   }
 
   let ownerId = existingOwner?.owner_id;
-
   if (!ownerId) {
     const { data: createdOwner, error: createOwnerError } = await supabaseClient
       .from("owners")
-      .insert([{ user_id: currentUserId }])
+      .insert([{ user_id: publicUser.user_id }])
       .select("owner_id")
       .single();
 
@@ -122,7 +195,6 @@ export async function createProperty(payload, imageFiles = []) {
   }
 
   const usage = deriveAllowedUsage(payload);
-
   const insertPayload = {
     owner_id: ownerId,
     title: payload.title,
@@ -156,37 +228,31 @@ export async function createProperty(payload, imageFiles = []) {
     return { data: null, error: new Error("Property created without property_id") };
   }
 
-  for (const file of imageFiles) {
-    const imageUploadResult = await uploadPropertyImage(file, property.property_id);
-    if (imageUploadResult.error) {
-      console.error("Property image upload failed:", imageUploadResult.error);
-    }
+  if (imageFiles.length) {
+    await Promise.all(imageFiles.map(async (file) => {
+      const imageUploadResult = await uploadPropertyImage(file, property.property_id);
+      if (imageUploadResult.error) {
+        console.error("Property image upload failed:", imageUploadResult.error);
+      }
+    }));
   }
 
-  const { data: createdProperty, error: propertyFetchError } = await supabaseClient
-    .from("properties")
-    .select(PROPERTY_SELECT_QUERY)
-    .eq("property_id", property.property_id)
-    .single();
-
-  if (propertyFetchError) {
-    return { data: property, error: propertyFetchError };
-  }
-
-  return { data: createdProperty, error: null };
+  return getPropertyById(property.property_id);
 }
 
 export async function updateProperty(propertyId, payload) {
-  return supabaseClient
+  const { data, error } = await supabaseClient
     .from("properties")
     .update(payload)
     .eq("property_id", propertyId)
-    .select()
+    .select(PROPERTY_SELECT_QUERY)
     .single();
+
+  if (error) return { data: null, error };
+  return { data: normalizePropertyRecord(data), error: null };
 }
 
 export async function deleteProperty(propertyId) {
-  // Delete images first
   const { error: imageDeleteError } = await supabaseClient
     .from("property_images")
     .delete()
@@ -196,8 +262,6 @@ export async function deleteProperty(propertyId) {
     return { error: imageDeleteError };
   }
 
-  // Delete property — use .select() so we can detect a silent RLS block.
-  // Supabase returns no error when RLS blocks DELETE, just 0 rows.
   const { data: deleted, error: propError } = await supabaseClient
     .from("properties")
     .delete()
@@ -209,14 +273,12 @@ export async function deleteProperty(propertyId) {
   }
 
   if (!deleted || deleted.length === 0) {
-    // RLS silently blocked the delete (or ID doesn't exist)
     return { error: new Error("Permission denied: you can only delete your own properties.") };
   }
 
   localStorage.setItem("propertiesUpdatedAt", String(Date.now()));
   return { data: deleted, error: null };
 }
-
 
 export async function uploadPropertyImage(file, propertyId) {
   const extension = file.name.split(".").pop();
@@ -238,20 +300,37 @@ export async function uploadPropertyImage(file, propertyId) {
     .insert([{ property_id: propertyId, image_url: publicUrlData.publicUrl }]);
 }
 
-
 export async function listPropertyImagesForPropertyIds(propertyIds = []) {
   const validIds = propertyIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0);
   if (!validIds.length) return { data: [], error: null };
 
-  return supabaseClient
+  const { data, error } = await supabaseClient
     .from("property_images")
-    .select("property_id,image_url")
+    .select("image_id,property_id,image_url")
     .in("property_id", validIds);
+
+  if (error) return { data: null, error };
+
+  return {
+    data: (data || []).map((image) => ({
+      ...image,
+      image_url: resolvePropertyImageUrl(image.image_url)
+    })),
+    error: null
+  };
 }
 
 export async function listPropertyImagesForPropertyId(propertyId) {
-  return supabaseClient
+  const { data, error } = await supabaseClient
     .from("property_images")
-    .select("image_url")
-    .eq("property_id", Number(propertyId));
+    .select("image_id,image_url")
+    .eq("property_id", Number(propertyId))
+    .order("image_id", { ascending: true });
+
+  if (error) return { data: null, error };
+
+  return {
+    data: normalizeImageRows(data),
+    error: null
+  };
 }
