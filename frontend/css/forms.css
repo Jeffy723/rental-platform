@@ -132,6 +132,12 @@
 }
 .checkbox-inline input[type="checkbox"] { width: auto; margin: 0; }
 .checkbox-inline label { margin: 0; font-weight: 600; color: var(--text); }
+.helper-text {
+  margin-top: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
 
 .toolbar { display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: end; }
 .toolbar > * { flex: 1 1 180px; }

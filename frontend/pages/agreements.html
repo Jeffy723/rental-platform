@@ -48,11 +48,8 @@
       </div>
       <div>
         <label for="agreementStatus">Status</label>
-        <select id="agreementStatus">
-          <option value="Active">Active</option>
-          <option value="Completed">Completed</option>
-          <option value="Terminated">Terminated</option>
-        </select>
+        <input id="agreementStatus" type="text" value="Pending Owner Approval" readonly />
+        <p class="helper-text">Agreements move to owner approval, then tenant approval, and become active only after both approvals.</p>
       </div>
       <div class="full">
         <button class="btn btn-primary" type="submit">Create Agreement</button>
