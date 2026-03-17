@@ -6,7 +6,7 @@ const RESIDENTIAL_PROPERTY_TYPES = new Set(["apartment", "house", "studio"]);
 const COMMERCIAL_PROPERTY_TYPES = new Set(["office", "shop", "commercial"]);
 const PROPERTY_SELECT_QUERY = `
   *,
-  owners(user_id,users(name,email)),
+  owners!properties_owner_id_fkey(user_id,users!owners_user_id_fkey(name,email)),
   property_images(image_id,image_url)
 `;
 
@@ -66,8 +66,17 @@ function normalizeImageRows(images = []) {
 function normalizePropertyRecord(property) {
   if (!property) return property;
 
+  const owner = Array.isArray(property.owners) ? property.owners[0] || null : property.owners || null;
+  const ownerUser = Array.isArray(owner?.users) ? owner.users[0] || null : owner?.users || null;
+
   return {
     ...property,
+    owners: owner
+      ? {
+        ...owner,
+        users: ownerUser
+      }
+      : owner,
     property_images: normalizeImageRows(property.property_images)
   };
 }

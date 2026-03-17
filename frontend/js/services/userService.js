@@ -1,5 +1,38 @@
 import supabaseClient from "../core/supabaseClient.js";
 
+function normalizeRelation(value) {
+  if (Array.isArray(value)) return value[0] || null;
+  return value || null;
+}
+
+function normalizeUserRelation(record) {
+  if (!record) return record;
+  return {
+    ...record,
+    users: normalizeRelation(record.users)
+  };
+}
+
+async function attachUsers(records = []) {
+  const userIds = records.map((record) => Number(record.user_id)).filter(Boolean);
+  if (!userIds.length) return records.map((record) => ({ ...record, users: null }));
+
+  const { data: users, error } = await supabaseClient
+    .from("users")
+    .select("user_id,name,email")
+    .in("user_id", userIds);
+
+  if (error) {
+    return records.map((record) => normalizeUserRelation(record));
+  }
+
+  const usersById = new Map((users || []).map((user) => [Number(user.user_id), user]));
+  return records.map((record) => ({
+    ...record,
+    users: usersById.get(Number(record.user_id)) || normalizeRelation(record.users)
+  }));
+}
+
 function buildProfile(userData, roleData = null) {
   const phone = roleData?.phone || null;
   const city = roleData?.city || null;
@@ -38,15 +71,31 @@ async function getRoleProfileByUserId(userId, role) {
 }
 
 export async function getOwners() {
-  return supabaseClient
+  const { data, error } = await supabaseClient
     .from("owners")
-    .select("owner_id,user_id,phone,address,city,owner_type,users(name,email)");
+    .select("owner_id,user_id,phone,address,city,owner_type,users!owners_user_id_fkey(name,email)")
+    .order("owner_id", { ascending: true });
+
+  const records = await attachUsers(data || []);
+
+  return {
+    data: records.map((owner) => normalizeUserRelation(owner)),
+    error
+  };
 }
 
 export async function getTenants() {
-  return supabaseClient
+  const { data, error } = await supabaseClient
     .from("tenants")
-    .select("tenant_id,user_id,phone,aadhaar_no,occupation,permanent_address,city,users(name,email)");
+    .select("tenant_id,user_id,phone,aadhaar_no,occupation,permanent_address,city,users!tenants_user_id_fkey(name,email)")
+    .order("tenant_id", { ascending: true });
+
+  const records = await attachUsers(data || []);
+
+  return {
+    data: records.map((tenant) => normalizeUserRelation(tenant)),
+    error
+  };
 }
 
 export async function getOwnerByUserId(userId) {

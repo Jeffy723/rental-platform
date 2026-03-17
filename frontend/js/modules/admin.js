@@ -14,7 +14,7 @@ const ownersTableEl = document.getElementById("adminOwnersTable");
 const tenantsTableEl = document.getElementById("adminTenantsTable");
 
 const ACTIVE_STATUS = "ACTIVE";
-const PENDING_STATUSES = new Set(["PENDING OWNER APPROVAL", "PENDING TENANT APPROVAL"]);
+const PENDING_STATUSES = new Set(["PENDING OWNER", "PENDING OWNER APPROVAL", "PENDING TENANT", "PENDING TENANT APPROVAL"]);
 
 function setDashboardStatus(message) {
   if (statusEl) statusEl.textContent = message;

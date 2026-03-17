@@ -5,8 +5,8 @@ import { createAgreement, listAgreements, updateAgreementStatus, updateAgreement
 import { formatCurrency, formatDate, showToast } from "../utils/helpers.js";
 
 const AGREEMENT_STATUS = {
-  pendingOwner: "Pending Owner Approval",
-  pendingTenant: "Pending Tenant Approval",
+  pendingOwner: "Pending Owner",
+  pendingTenant: "Pending Tenant",
   active: "Active",
   completed: "Completed",
   rejected: "Rejected"
@@ -32,9 +32,42 @@ function normalizeStatus(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+function isPendingOwnerStatus(value) {
+  const status = normalizeStatus(value);
+  return status === "PENDING OWNER" || status === "PENDING OWNER APPROVAL";
+}
+
+function isPendingTenantStatus(value) {
+  const status = normalizeStatus(value);
+  return status === "PENDING TENANT" || status === "PENDING TENANT APPROVAL";
+}
+
+function getAgreementStatusLabel(value) {
+  const status = normalizeStatus(value);
+
+  if (status === "PENDING OWNER" || status === "PENDING OWNER APPROVAL") {
+    return "Pending Owner Approval";
+  }
+
+  if (status === "PENDING TENANT" || status === "PENDING TENANT APPROVAL") {
+    return "Pending Tenant Approval";
+  }
+
+  if (status === "ACTIVE") return "Active";
+  if (status === "COMPLETED") return "Completed";
+  if (status === "REJECTED") return "Rejected";
+  if (status === "TERMINATED") return "Terminated";
+
+  return value || "-";
+}
+
 function getAgreementErrorMessage(error, fallbackMessage) {
   const rawMessage = String(error?.message || "").trim();
   if (!rawMessage) return fallbackMessage;
+
+  if (/value too long/i.test(rawMessage) || /character varying\(20\)/i.test(rawMessage)) {
+    return "Agreement status in the database is still limited. Run the latest agreement SQL or deploy the latest code together.";
+  }
 
   if (/agreement_status/i.test(rawMessage) || /check constraint/i.test(rawMessage)) {
     return "Database agreement status rules are outdated. Run the latest agreement schema SQL first.";
@@ -65,7 +98,7 @@ function getAgreementDisplayStatus(agreement) {
     return "Pending Edit Approval";
   }
 
-  return agreement.agreement_status || "-";
+  return getAgreementStatusLabel(agreement.agreement_status);
 }
 
 function isAgreementOwner(agreement) {
@@ -81,7 +114,7 @@ if (!canCreateAgreement() && adminForm) {
 }
 
 if (agreementStatusInput) {
-  agreementStatusInput.value = AGREEMENT_STATUS.pendingOwner;
+  agreementStatusInput.value = getAgreementStatusLabel(AGREEMENT_STATUS.pendingOwner);
   agreementStatusInput.disabled = true;
 }
 
@@ -130,12 +163,12 @@ function actionButtons(agreement) {
     actions.push(`<button class="btn btn-secondary completeAgreementBtn" data-id="${agreement.agreement_id}">Mark Completed</button>`);
   }
 
-  if (isOwner && agreementStatus === normalizeStatus(AGREEMENT_STATUS.pendingOwner)) {
+  if (isOwner && isPendingOwnerStatus(agreement.agreement_status)) {
     actions.push(`<button class="btn btn-primary approveAgreementBtn" data-id="${agreement.agreement_id}">Approve</button>`);
     actions.push(`<button class="btn btn-danger rejectAgreementBtn" data-id="${agreement.agreement_id}">Reject</button>`);
   }
 
-  if (isTenant && agreementStatus === normalizeStatus(AGREEMENT_STATUS.pendingTenant)) {
+  if (isTenant && isPendingTenantStatus(agreement.agreement_status)) {
     actions.push(`<button class="btn btn-primary approveAgreementBtn" data-id="${agreement.agreement_id}">Approve</button>`);
     actions.push(`<button class="btn btn-danger rejectAgreementBtn" data-id="${agreement.agreement_id}">Reject</button>`);
   }
@@ -246,7 +279,7 @@ async function approveAgreement(agreementId) {
 
   const agreementStatus = normalizeStatus(agreement.agreement_status);
 
-  if (user.role === "owner" && isAgreementOwner(agreement) && agreementStatus === normalizeStatus(AGREEMENT_STATUS.pendingOwner)) {
+  if (user.role === "owner" && isAgreementOwner(agreement) && isPendingOwnerStatus(agreement.agreement_status)) {
     const { error: updateError } = await updateAgreementStatus(agreementId, AGREEMENT_STATUS.pendingTenant);
     if (updateError) {
       showToast("Failed to record owner approval", "error");
@@ -258,7 +291,7 @@ async function approveAgreement(agreementId) {
     return;
   }
 
-  if (user.role === "tenant" && isAgreementTenant(agreement) && agreementStatus === normalizeStatus(AGREEMENT_STATUS.pendingTenant)) {
+  if (user.role === "tenant" && isAgreementTenant(agreement) && isPendingTenantStatus(agreement.agreement_status)) {
     const { error: updateError } = await updateAgreementStatus(agreementId, AGREEMENT_STATUS.active);
     if (updateError) {
       showToast("Failed to record tenant approval", "error");
@@ -285,8 +318,8 @@ async function rejectAgreement(agreementId) {
 
   const agreementStatus = normalizeStatus(agreement.agreement_status);
   const canReject = (
-    (user.role === "owner" && isAgreementOwner(agreement) && agreementStatus === normalizeStatus(AGREEMENT_STATUS.pendingOwner))
-    || (user.role === "tenant" && isAgreementTenant(agreement) && agreementStatus === normalizeStatus(AGREEMENT_STATUS.pendingTenant))
+    (user.role === "owner" && isAgreementOwner(agreement) && isPendingOwnerStatus(agreement.agreement_status))
+    || (user.role === "tenant" && isAgreementTenant(agreement) && isPendingTenantStatus(agreement.agreement_status))
   );
 
   if (!canReject) {
@@ -402,7 +435,7 @@ adminForm?.addEventListener("submit", async (event) => {
 
     showToast("Agreement created. Waiting for owner approval.", "success");
     adminForm.reset();
-    if (agreementStatusInput) agreementStatusInput.value = AGREEMENT_STATUS.pendingOwner;
+    if (agreementStatusInput) agreementStatusInput.value = getAgreementStatusLabel(AGREEMENT_STATUS.pendingOwner);
     await loadAgreementList();
   } finally {
     if (createAgreementButton) {
