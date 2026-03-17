@@ -1,5 +1,5 @@
 import { requireUser } from "../core/auth.js";
-import { getOwners, getTenants } from "../services/userService.js";
+import { getAllUsers } from "../services/userService.js";
 import { listProperties } from "../services/propertyService.js";
 import { listAgreements } from "../services/agreementService.js";
 import { showToast } from "../utils/helpers.js";
@@ -105,7 +105,7 @@ function renderOwnersTable(owners, propertyCounts, ownerAgreementStats) {
   if (!ownersTableEl) return;
 
   const sortedOwners = [...owners].sort((left, right) =>
-    String(left.users?.name || "").localeCompare(String(right.users?.name || ""), undefined, { sensitivity: "base" })
+    String(left.name || "").localeCompare(String(right.name || ""), undefined, { sensitivity: "base" })
   );
 
   ownersTableEl.innerHTML = sortedOwners.length
@@ -114,8 +114,8 @@ function renderOwnersTable(owners, propertyCounts, ownerAgreementStats) {
         const stats = ownerAgreementStats.get(owner.owner_id) || { total: 0, active: 0, pending: 0 };
         return `
           <tr>
-            <td>${escapeHtml(owner.users?.name || "-")}</td>
-            <td>${escapeHtml(owner.users?.email || "-")}</td>
+            <td>${escapeHtml(owner.name || "-")}</td>
+            <td>${escapeHtml(owner.email || "-")}</td>
             <td>${escapeHtml(owner.city || "-")}</td>
             <td>${escapeHtml(owner.owner_type || "-")}</td>
             <td>${propertyCounts.get(owner.owner_id) || 0}</td>
@@ -132,7 +132,7 @@ function renderTenantsTable(tenants, tenantAgreementStats) {
   if (!tenantsTableEl) return;
 
   const sortedTenants = [...tenants].sort((left, right) =>
-    String(left.users?.name || "").localeCompare(String(right.users?.name || ""), undefined, { sensitivity: "base" })
+    String(left.name || "").localeCompare(String(right.name || ""), undefined, { sensitivity: "base" })
   );
 
   tenantsTableEl.innerHTML = sortedTenants.length
@@ -141,8 +141,8 @@ function renderTenantsTable(tenants, tenantAgreementStats) {
         const stats = tenantAgreementStats.get(tenant.tenant_id) || { total: 0, active: 0, pending: 0 };
         return `
           <tr>
-            <td>${escapeHtml(tenant.users?.name || "-")}</td>
-            <td>${escapeHtml(tenant.users?.email || "-")}</td>
+            <td>${escapeHtml(tenant.name || "-")}</td>
+            <td>${escapeHtml(tenant.email || "-")}</td>
             <td>${escapeHtml(tenant.city || "-")}</td>
             <td>${escapeHtml(tenant.occupation || "-")}</td>
             <td>${stats.active}</td>
@@ -162,15 +162,15 @@ async function loadAdminDashboard() {
   setDashboardStatus("Loading owner, tenant, property, and agreement summaries...");
 
   try {
-    const [ownersResult, tenantsResult, propertiesResult, agreementsResult] = await Promise.all([
-      getOwners(),
-      getTenants(),
+    const [usersResult, propertiesResult, agreementsResult] = await Promise.all([
+      getAllUsers(),
       listProperties(),
       listAgreements()
     ]);
 
-    const owners = extractData(ownersResult);
-    const tenants = extractData(tenantsResult);
+    const users = extractData(usersResult);
+    const owners = users.filter((item) => item.role === "owner");
+    const tenants = users.filter((item) => item.role === "tenant");
     const properties = extractData(propertiesResult);
     const agreements = extractData(agreementsResult);
 
@@ -187,8 +187,7 @@ async function loadAdminDashboard() {
     renderTenantsTable(tenants, tenantStats);
 
     const errors = [
-      ownersResult?.error,
-      tenantsResult?.error,
+      usersResult?.error,
       propertiesResult?.error,
       agreementsResult?.error
     ].filter(Boolean);

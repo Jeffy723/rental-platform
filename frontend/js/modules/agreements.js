@@ -1,5 +1,5 @@
 import { requireUser } from "../core/auth.js";
-import { getTenants } from "../services/userService.js";
+import { getAllUsers } from "../services/userService.js";
 import { listProperties } from "../services/propertyService.js";
 import { createAgreement, listAgreements, updateAgreementStatus, updateAgreement, deleteAgreement } from "../services/agreementService.js";
 import { formatCurrency, formatDate, showToast } from "../utils/helpers.js";
@@ -121,10 +121,12 @@ if (agreementStatusInput) {
 async function loadSelectOptions() {
   if (!canCreateAgreement()) return;
 
-  const [{ data: properties, error: propertyError }, { data: tenants, error: tenantError }] = await Promise.all([
+  const [{ data: properties, error: propertyError }, usersResult] = await Promise.all([
     listProperties({ status: "Available" }),
-    getTenants()
+    getAllUsers()
   ]);
+  const tenantError = usersResult?.error;
+  const tenants = (usersResult?.data || []).filter((item) => item.role === "tenant");
 
   if (propertyError || tenantError) {
     console.error(propertyError || tenantError);
@@ -137,7 +139,7 @@ async function loadSelectOptions() {
     .join("")}`;
 
   tenantSelect.innerHTML = `<option value="">Select Tenant</option>${(tenants || [])
-    .map((tenant) => `<option value="${tenant.tenant_id}">#${tenant.tenant_id} - ${tenant.users?.name || "-"}</option>`)
+    .map((tenant) => `<option value="${tenant.tenant_id}">#${tenant.tenant_id} - ${tenant.name || "-"}</option>`)
     .join("")}`;
 }
 
