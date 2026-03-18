@@ -1,21 +1,15 @@
 import supabaseClient from "./supabaseClient.js";
 
 const SESSION_RETRY_DELAYS_MS = [0, 120, 250, 500];
-const STORED_SESSION_GRACE_MS = 15000;
 
 const SESSION_KEYS = {
-  authUser: "user",
-  appUser: "appUser",
-  userId: "userId",
-  role: "role",
-  name: "name",
-  email: "userEmail",
-  sessionToken: "sessionToken",
-  bootstrapAt: "sessionBootstrapAt",
-  mode: "sessionMode"
+  mode: "sessionMode",
+  authToken: "authToken"
 };
 
 const SUPABASE_AUTH_STORAGE_KEY = "nestfinder-auth";
+
+let currentUser = null;
 
 function getLoginPath() {
   return "/pages/login.html";
@@ -23,17 +17,6 @@ function getLoginPath() {
 
 function getIndexPath() {
   return "/index.html";
-}
-
-function readJson(storage, key) {
-  const raw = storage.getItem(key);
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
 }
 
 function normalizeEmail(value) {
@@ -53,78 +36,37 @@ function setSessionValue(key, value) {
   sessionStorage.setItem(key, String(value));
 }
 
-function setSessionJson(key, value) {
-  if (!value) {
-    sessionStorage.removeItem(key);
-    return;
-  }
-
-  sessionStorage.setItem(key, JSON.stringify(value));
-}
-
 function getStoredSessionMode() {
   return getSessionValue(SESSION_KEYS.mode) || "supabase";
 }
 
-function getCachedUserForSession(authUser) {
-  const email = authUser?.email || "";
-  const authUserId = authUser?.id || "";
-  const cachedUser = getStoredUser();
-  if (!cachedUser?.email) return null;
-  if (normalizeEmail(cachedUser.email) !== normalizeEmail(email)) return null;
-  if (authUserId && cachedUser.auth_user_id && cachedUser.auth_user_id !== authUserId) return null;
-  return cachedUser;
-}
-
-function hasOwnField(record, key) {
-  return Object.prototype.hasOwnProperty.call(record || {}, key);
-}
-
-function isHydratedRoleProfile(user) {
-  if (!user?.role) return false;
-  if (user.role === "admin") return true;
-
-  if (user.role === "owner") {
-    return ["phone", "city", "address", "owner_type"].every((key) => hasOwnField(user, key));
-  }
-
-  if (user.role === "tenant") {
-    return ["phone", "city", "aadhaar_no", "occupation", "permanent_address"].every((key) => hasOwnField(user, key));
-  }
-
-  return true;
-}
-
 export function getStoredAuthUser() {
-  return readJson(sessionStorage, SESSION_KEYS.authUser);
+  return null;
 }
 
 export function getStoredUser() {
-  return readJson(sessionStorage, SESSION_KEYS.appUser);
+  return currentUser;
 }
 
 export function storeUserSession(authUser, appUser = null, { mode = getStoredSessionMode(), sessionToken = "" } = {}) {
-  if (authUser) {
-    setSessionJson(SESSION_KEYS.authUser, {
-      id: authUser.id,
-      email: authUser.email || ""
+  currentUser = appUser || null;
+  setSessionValue(SESSION_KEYS.mode, mode);
+
+  if (sessionToken) {
+    setSessionValue(SESSION_KEYS.authToken, sessionToken);
+    return;
+  }
+
+  if (mode !== "local" && authUser?.id) {
+    void supabaseClient.auth.getSession().then(({ data }) => {
+      const accessToken = data?.session?.access_token || "";
+      setSessionValue(SESSION_KEYS.authToken, accessToken);
     });
   }
-
-  if (appUser) {
-    setSessionJson(SESSION_KEYS.appUser, appUser);
-    setSessionValue(SESSION_KEYS.userId, appUser.user_id);
-    setSessionValue(SESSION_KEYS.role, appUser.role || "");
-    setSessionValue(SESSION_KEYS.name, appUser.name || "");
-    setSessionValue(SESSION_KEYS.email, appUser.email || "");
-  }
-
-  setSessionValue(SESSION_KEYS.sessionToken, sessionToken || "");
-  setSessionValue(SESSION_KEYS.bootstrapAt, Date.now());
-  setSessionValue(SESSION_KEYS.mode, mode);
 }
 
 export function clearStoredUser() {
+  currentUser = null;
   Object.values(SESSION_KEYS).forEach((key) => {
     sessionStorage.removeItem(key);
   });
@@ -132,13 +74,7 @@ export function clearStoredUser() {
 }
 
 function shouldRetrySessionLookup() {
-  return Boolean(getStoredUser() || getStoredAuthUser());
-}
-
-function hasFreshStoredSession() {
-  const bootstrapAt = Number(getSessionValue(SESSION_KEYS.bootstrapAt) || 0);
-  if (!bootstrapAt) return false;
-  return Date.now() - bootstrapAt <= STORED_SESSION_GRACE_MS;
+  return Boolean(currentUser || getSessionValue(SESSION_KEYS.authToken));
 }
 
 function wait(ms) {
@@ -162,6 +98,7 @@ async function resolveSession({ retryIfStored = false } = {}) {
 
     const session = data?.session;
     if (session?.user?.email) {
+      setSessionValue(SESSION_KEYS.authToken, session.access_token || "");
       return { session, error: null };
     }
   }
@@ -241,14 +178,13 @@ async function getUserWithProfileByAuth(authUser) {
     ...(roleProfile || {})
   };
 
-  storeUserSession(authUser, mergedUser, { mode: "supabase" });
-
+  currentUser = mergedUser;
   return mergedUser;
 }
 
 function getLocalModeUser() {
   if (getStoredSessionMode() !== "local") return null;
-  return getStoredUser();
+  return currentUser;
 }
 
 export async function syncStoredUserWithSession() {
@@ -256,15 +192,6 @@ export async function syncStoredUserWithSession() {
   const localModeUser = getLocalModeUser();
 
   if (session?.user?.email) {
-    const cachedUser = getCachedUserForSession(session.user);
-    if (cachedUser?.role && isHydratedRoleProfile(cachedUser)) {
-      storeUserSession(session.user, cachedUser, {
-        mode: "supabase",
-        sessionToken: session.access_token || ""
-      });
-      return cachedUser;
-    }
-
     return getUserWithProfileByAuth(session.user);
   }
 
@@ -272,9 +199,9 @@ export async function syncStoredUserWithSession() {
     return localModeUser;
   }
 
-  const storedUser = getStoredUser();
-  if (!error && storedUser && hasFreshStoredSession()) {
-    return storedUser;
+  if (!error) {
+    currentUser = null;
+    return null;
   }
 
   clearStoredUser();
@@ -282,43 +209,9 @@ export async function syncStoredUserWithSession() {
 }
 
 export async function requireUser(allowedRoles = []) {
-  const { session, error } = await resolveSession({ retryIfStored: true });
-  const localModeUser = getLocalModeUser();
-
-  if (!session?.user?.email && localModeUser) {
-    if (allowedRoles.length && !allowedRoles.includes(localModeUser.role)) {
-      window.location.href = getIndexPath();
-      return null;
-    }
-
-    return localModeUser;
-  }
-
-  if (!error && !session?.user?.email) {
-    const storedUser = getStoredUser();
-    if (storedUser && hasFreshStoredSession()) {
-      if (allowedRoles.length && !allowedRoles.includes(storedUser.role)) {
-        window.location.href = getIndexPath();
-        return null;
-      }
-
-      return storedUser;
-    }
-  }
-
-  if (error || !session?.user?.email) {
-    clearStoredUser();
-    window.location.href = getLoginPath();
-    return null;
-  }
-
-  const cachedUser = getCachedUserForSession(session.user);
-  const user = cachedUser?.role && isHydratedRoleProfile(cachedUser)
-    ? cachedUser
-    : await getUserWithProfileByAuth(session.user);
+  const user = await syncStoredUserWithSession();
 
   if (!user) {
-    clearStoredUser();
     window.location.href = getLoginPath();
     return null;
   }
@@ -371,29 +264,7 @@ export function watchAuthState(onChange) {
 
     if (!activeSession?.user?.email) {
       const localModeUser = getLocalModeUser();
-      if (localModeUser) {
-        emitIfLatest(localModeUser);
-        return;
-      }
-
-      const storedUser = getStoredUser();
-      if (storedUser && hasFreshStoredSession()) {
-        emitIfLatest(storedUser);
-        return;
-      }
-
-      clearStoredUser();
-      emitIfLatest(null);
-      return;
-    }
-
-    const cachedUser = getCachedUserForSession(activeSession.user);
-    if (cachedUser?.role && isHydratedRoleProfile(cachedUser)) {
-      storeUserSession(activeSession.user, cachedUser, {
-        mode: "supabase",
-        sessionToken: activeSession.access_token || ""
-      });
-      emitIfLatest(cachedUser);
+      emitIfLatest(localModeUser || null);
       return;
     }
 

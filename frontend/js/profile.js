@@ -1,5 +1,5 @@
 import supabaseClient from "./core/supabaseClient.js";
-import { getStoredAuthUser, logout, requireUser, storeUserSession } from "./core/auth.js";
+import { logout, requireUser } from "./core/auth.js";
 import { showToast } from "./utils/helpers.js";
 
 const profileForm = document.getElementById("profileForm");
@@ -142,18 +142,6 @@ function setEditMode(enabled) {
   syncEditState();
 }
 
-function persistProfile(profile) {
-  const authUser = getStoredAuthUser() || {
-    id: baseUser?.auth_user_id || baseUser?.user_id,
-    email: baseUser?.email || profile.email
-  };
-
-  storeUserSession(authUser, {
-    ...baseUser,
-    ...profile
-  });
-}
-
 function restoreInitialValues() {
   if (!originalProfile) return;
   renderProfile(originalProfile);
@@ -179,7 +167,6 @@ async function loadProfile() {
     originalProfile = buildProfileState(user);
     showRoleFields(user.role);
     renderProfile(originalProfile);
-    persistProfile(originalProfile);
     setEditMode(false);
   } finally {
     loadingProfile = false;
@@ -248,7 +235,6 @@ async function saveProfile() {
 
     originalProfile = nextProfile;
     renderProfile(originalProfile);
-    persistProfile(originalProfile);
     setEditMode(false);
     showToast("Profile updated successfully", "success");
   } catch (error) {

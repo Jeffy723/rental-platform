@@ -330,7 +330,10 @@ if (form) {
         }
       }
 
-      storeUserSession(authData.user, appUser, { mode: sessionMode });
+      storeUserSession(authData.user, null, {
+        mode: sessionMode,
+        sessionToken: authData?.session?.access_token || ""
+      });
 
       if (sessionMode !== "local") {
         await syncStoredUserWithSession();

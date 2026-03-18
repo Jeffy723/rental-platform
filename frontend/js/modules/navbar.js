@@ -1,4 +1,4 @@
-import { getStoredUser, syncStoredUserWithSession } from "../core/auth.js";
+import { syncStoredUserWithSession } from "../core/auth.js";
 
 function getDashboardPath(role) {
   if (role === "admin") return "../dashboards/admin.html";
@@ -12,8 +12,7 @@ async function renderNavbar() {
 
   if (!navRight) return;
 
-  const sessionUser = await syncStoredUserWithSession();
-  const appUser = sessionUser || getStoredUser();
+  const appUser = await syncStoredUserWithSession();
   const email = appUser?.email || "";
 
   if (!email) {
