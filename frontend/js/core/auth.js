@@ -373,10 +373,18 @@ export function updateNavbarAuthState(root = document, user = null) {
 }
 
 export function watchAuthState(onChange) {
+  let authChangeSequence = 0;
+
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    const currentSequence = ++authChangeSequence;
+    const emitIfLatest = (user) => {
+      if (currentSequence !== authChangeSequence) return;
+      onChange(user);
+    };
+
     if (event === "SIGNED_OUT") {
       clearStoredUser();
-      onChange(null);
+      emitIfLatest(null);
       return;
     }
 
@@ -387,30 +395,30 @@ export function watchAuthState(onChange) {
     if (!activeSession?.user?.email) {
       const localModeUser = getLocalModeUser();
       if (localModeUser) {
-        onChange(localModeUser);
+        emitIfLatest(localModeUser);
         return;
       }
 
       const storedUser = getStoredUser();
       if (storedUser && hasFreshStoredSession()) {
-        onChange(storedUser);
+        emitIfLatest(storedUser);
         return;
       }
 
       clearStoredUser();
-      onChange(null);
+      emitIfLatest(null);
       return;
     }
 
     const cachedUser = getCachedUserForEmail(activeSession.user.email, activeSession.user.id);
     if (cachedUser?.role && isHydratedRoleProfile(cachedUser)) {
       storeUserSession(activeSession.user, cachedUser, { mode: "supabase" });
-      onChange(cachedUser);
+      emitIfLatest(cachedUser);
       return;
     }
 
     const user = await getUserWithProfileByEmail(activeSession.user.email, { authUserId: activeSession.user.id });
-    onChange(user);
+    emitIfLatest(user);
   });
 }
 
