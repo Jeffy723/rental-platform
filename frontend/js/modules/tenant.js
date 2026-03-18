@@ -2,7 +2,7 @@ import { getStoredAuthUser, requireUser, storeUserSession } from "../core/auth.j
 import supabaseClient from "../core/supabaseClient.js";
 import { listAgreements } from "../services/agreementService.js";
 import { listApplications } from "../services/applicationService.js";
-import { listPayments } from "../services/paymentService.js";
+import { getDueMonthsForAgreement, listPayments } from "../services/paymentService.js";
 import { listMaintenanceRequests } from "../services/maintenanceService.js";
 import { showToast } from "../utils/helpers.js";
 
@@ -16,6 +16,8 @@ const closeBtn = document.getElementById("closeCompleteProfileBtn");
 const cancelBtn = document.getElementById("cancelCompleteProfileBtn");
 const tenantForm = document.getElementById("tenantCompleteForm");
 const applicationsTable = document.getElementById("tenantApplicationsTable");
+const upcomingPaymentMeta = document.getElementById("tenantUpcomingPaymentMeta");
+const payNowBtn = document.getElementById("tenantPayNowBtn");
 
 async function checkProfileComplete() {
   const { data, error } = await supabaseClient
@@ -145,10 +147,30 @@ const activeAgreement = tenantAgreements.find((item) => item.agreement_status ==
 const tenantAgreementIds = new Set(tenantAgreements.map((item) => item.agreement_id));
 const tenantPayments = (payments || []).filter((item) => tenantAgreementIds.has(item.agreement_id));
 const tenantMaintenance = (maintenance || []).filter((item) => tenantAgreementIds.has(item.agreement_id));
-const upcomingPayment = tenantPayments[0]?.amount_paid || activeAgreement?.monthly_rent || 0;
+const dueMonths = activeAgreement ? getDueMonthsForAgreement(
+  activeAgreement,
+  tenantPayments.filter((item) => Number(item.agreement_id) === Number(activeAgreement.agreement_id))
+) : [];
+const nextDueMonth = dueMonths[0] || "";
+const upcomingPayment = activeAgreement && nextDueMonth
+  ? Number(activeAgreement.monthly_rent || 0)
+  : 0;
 
 document.getElementById("tenantActiveRental").textContent = activeAgreement ? "1" : "0";
 document.getElementById("tenantUpcomingPayment").textContent = `Rs ${Number(upcomingPayment).toLocaleString()}`;
 document.getElementById("tenantMaintenanceRequests").textContent = String(tenantMaintenance.length);
 document.getElementById("tenantAgreementStatus").textContent = activeAgreement?.agreement_status || "No Active Agreement";
 document.getElementById("tenantRecentNotifications").textContent = String(applications.length);
+
+if (upcomingPaymentMeta) {
+  upcomingPaymentMeta.textContent = nextDueMonth
+    ? `Next due month: ${nextDueMonth}`
+    : "No payment due yet.";
+}
+
+if (payNowBtn) {
+  payNowBtn.hidden = !nextDueMonth;
+  if (nextDueMonth) {
+    payNowBtn.href = `../pages/payments.html?agreement=${activeAgreement.agreement_id}&month=${encodeURIComponent(nextDueMonth)}`;
+  }
+}

@@ -73,7 +73,7 @@
           <article class="kpi-card metric-card"><p class="kpi-label">Active Agreements</p><p class="kpi-value" id="ownerActiveAgreements">0</p></article>
           <article class="kpi-card metric-card"><p class="kpi-label">Monthly Income</p><p class="kpi-value" id="ownerMonthlyIncome">₹0</p></article>
           <article class="kpi-card metric-card"><p class="kpi-label">Maintenance Requests</p><p class="kpi-value" id="ownerMaintenanceRequests">0</p></article>
-          <article class="kpi-card metric-card"><p class="kpi-label">Recent Activity</p><p class="kpi-value" id="ownerRecentActivity">0</p></article>
+          <article class="kpi-card metric-card"><p class="kpi-label">Pending Payment Confirmations</p><p class="kpi-value" id="ownerRecentActivity">0</p></article>
         </div>
       </section>
 
@@ -108,6 +108,33 @@
               </tr>
             </thead>
             <tbody id="ownerApplicationsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="page-card content-stack">
+        <div class="panel-header">
+          <div>
+            <h2 class="section-title">Payment Confirmations</h2>
+            <p class="section-subtitle">Confirm tenant-submitted rent receipts so your income view stays current.</p>
+          </div>
+          <div class="actions-row">
+            <a class="btn btn-secondary" href="../pages/payments.html">Open Payments</a>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Agreement</th>
+                <th>Month</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="ownerPaymentsTable"></tbody>
           </table>
         </div>
       </section>

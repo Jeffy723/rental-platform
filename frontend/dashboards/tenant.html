@@ -65,7 +65,14 @@
         <h1 class="section-title">Tenant Dashboard</h1>
         <div class="kpi-grid">
           <article class="kpi-card metric-card"><p class="kpi-label">Active Rental</p><p class="kpi-value" id="tenantActiveRental">0</p></article>
-          <article class="kpi-card metric-card"><p class="kpi-label">Upcoming Payment</p><p class="kpi-value" id="tenantUpcomingPayment">Rs 0</p></article>
+          <article class="kpi-card metric-card">
+            <p class="kpi-label">Upcoming Payment</p>
+            <p class="kpi-value" id="tenantUpcomingPayment">Rs 0</p>
+            <p class="section-subtitle" id="tenantUpcomingPaymentMeta" style="margin:0.65rem 0 0;">No payment due yet.</p>
+            <div class="actions-row" style="margin-top:0.75rem">
+              <a class="btn btn-primary btn-sm" id="tenantPayNowBtn" href="../pages/payments.html" hidden>Pay Now</a>
+            </div>
+          </article>
           <article class="kpi-card metric-card"><p class="kpi-label">Maintenance Requests</p><p class="kpi-value" id="tenantMaintenanceRequests">0</p></article>
           <article class="kpi-card metric-card"><p class="kpi-label">Agreement Status</p><p class="kpi-value" id="tenantAgreementStatus">No Active Agreement</p></article>
           <article class="kpi-card metric-card"><p class="kpi-label">Interest Requests</p><p class="kpi-value" id="tenantRecentNotifications">0</p></article>

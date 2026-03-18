@@ -17,7 +17,8 @@
     </section>
 
     <form id="paymentForm" class="page-card">
-      <h3 class="section-title">Record Payment</h3>
+      <h3 class="section-title" id="paymentFormTitle">Record Payment</h3>
+      <p class="section-subtitle" id="paymentFormSubtitle">Create or log a rent payment against an agreement.</p>
       <div class="form-grid">
       <div>
         <label for="agreementId">Agreement</label>
@@ -44,16 +45,17 @@
           <option value="Cash">Cash</option>
         </select>
       </div>
-      <div>
+      <div id="paymentStatusField">
         <label for="paymentStatus">Status</label>
         <select id="paymentStatus">
-          <option value="Paid">Paid</option>
+          <option value="Confirmed">Confirmed</option>
+          <option value="Submitted">Submitted</option>
           <option value="Pending">Pending</option>
           <option value="Late">Late</option>
         </select>
       </div>
       <div class="full">
-        <button class="btn btn-primary" type="submit">Record Payment</button>
+        <button class="btn btn-primary" id="paymentSubmitBtn" type="submit">Record Payment</button>
       </div>
     </div>
     </form>
@@ -71,6 +73,7 @@
               <th>Date</th>
               <th>Mode</th>
               <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody id="paymentTableBody"></tbody>

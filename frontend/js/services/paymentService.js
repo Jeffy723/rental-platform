@@ -36,6 +36,71 @@ function normalizePaymentRecord(record) {
   };
 }
 
+export function normalizePaymentStatus(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+export function getMonthKeyFromValue(value) {
+  return String(value || "").slice(0, 7);
+}
+
+export function getCurrentMonthKey(date = new Date()) {
+  return date.toISOString().slice(0, 7);
+}
+
+function addMonthToKey(monthKey, monthsToAdd = 1) {
+  const [yearPart, monthPart] = String(monthKey || "").split("-");
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return "";
+
+  const date = new Date(Date.UTC(year, month - 1 + monthsToAdd, 1));
+  return date.toISOString().slice(0, 7);
+}
+
+export function paymentCountsAsRecorded(status) {
+  const normalized = normalizePaymentStatus(status);
+  return normalized !== "REJECTED" && normalized !== "CANCELLED";
+}
+
+export function paymentCountsAsConfirmed(status) {
+  const normalized = normalizePaymentStatus(status);
+  return normalized === "CONFIRMED" || normalized === "PAID";
+}
+
+export function getDueMonthsForAgreement(agreement, payments = [], now = new Date()) {
+  const startMonth = getMonthKeyFromValue(agreement?.start_date);
+  const agreementEndMonth = getMonthKeyFromValue(agreement?.end_date);
+  const currentMonth = getCurrentMonthKey(now);
+
+  if (!startMonth || !currentMonth) return [];
+
+  const endMonth = agreementEndMonth && agreementEndMonth < currentMonth
+    ? agreementEndMonth
+    : currentMonth;
+
+  if (startMonth > endMonth) return [];
+
+  const settledMonths = new Set(
+    payments
+      .filter((payment) => paymentCountsAsRecorded(payment?.payment_status))
+      .map((payment) => getMonthKeyFromValue(payment?.payment_month))
+      .filter(Boolean)
+  );
+
+  const dueMonths = [];
+  let cursor = startMonth;
+
+  while (cursor && cursor <= endMonth) {
+    if (!settledMonths.has(cursor)) {
+      dueMonths.push(cursor);
+    }
+    cursor = addMonthToKey(cursor, 1);
+  }
+
+  return dueMonths;
+}
+
 export async function listPayments() {
   const { data, error } = await supabaseClient
     .from("rent_payments")
@@ -54,6 +119,15 @@ export async function createPayment(payload) {
   return supabaseClient
     .from("rent_payments")
     .insert([payload])
+    .select()
+    .single();
+}
+
+export async function updatePaymentStatus(paymentId, paymentStatus) {
+  return supabaseClient
+    .from("rent_payments")
+    .update({ payment_status: paymentStatus })
+    .eq("payment_id", Number(paymentId))
     .select()
     .single();
 }
