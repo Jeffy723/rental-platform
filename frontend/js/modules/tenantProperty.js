@@ -1,4 +1,4 @@
-import { getStoredUser, syncStoredUserWithSession } from "../core/auth.js";
+import { syncStoredUserWithSession } from "../core/auth.js";
 import { formatCurrency } from "../utils/helpers.js";
 import {
   getPropertyById,
@@ -11,7 +11,7 @@ const params = new URLSearchParams(window.location.search);
 const propertyId = Number(params.get("id"));
 const source = params.get("source") || "discover";
 
-const currentUser = await syncStoredUserWithSession() || getStoredUser();
+const currentUser = await syncStoredUserWithSession();
 
 async function getOwnerIdForCurrentUser() {
   if (!currentUser?.user_id || currentUser.role !== "owner") return null;

@@ -1,5 +1,5 @@
 import supabaseClient from "../core/supabaseClient.js";
-import { getStoredAuthUser, requireUser, storeUserSession, syncStoredUserWithSession } from "../core/auth.js";
+import { requireUser, syncStoredUserWithSession } from "../core/auth.js";
 import { showToast } from "../utils/helpers.js";
 
 const ownerBtn = document.getElementById("openOwnerDashboardBtn");
@@ -98,18 +98,6 @@ unifiedProfileForm?.addEventListener("submit", async (event) => {
       throw ownerError || tenantError || userError;
     }
 
-    const authUser = getStoredAuthUser() || {
-      id: user.auth_user_id || user.user_id,
-      email: user.email
-    };
-
-    storeUserSession(authUser, {
-      ...user,
-      phone,
-      city,
-      profile_completed: true
-    });
-
     if (unifiedProfileSection) {
       unifiedProfileSection.hidden = true;
     }
@@ -157,16 +145,6 @@ async function switchMode(nextRole) {
         .upsert({ user_id: user.user_id }, { onConflict: "user_id" });
       if (tenantError) throw tenantError;
     }
-
-    const authUser = getStoredAuthUser() || {
-      id: updatedUser.auth_user_id || updatedUser.user_id,
-      email: updatedUser.email
-    };
-
-    storeUserSession(authUser, {
-      ...user,
-      ...updatedUser
-    });
 
     await syncStoredUserWithSession();
 

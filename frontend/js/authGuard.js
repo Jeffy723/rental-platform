@@ -1,4 +1,4 @@
-import { getStoredUser, requireUser, syncStoredUserWithSession } from "./core/auth.js";
+import { requireUser, syncStoredUserWithSession } from "./core/auth.js";
 
 const ROUTE_GUARDS = {
   "/dashboards/owner.html": "owner",
@@ -82,10 +82,9 @@ function restoreDefaultPublicActions(navActions) {
   return getNavRefs();
 }
 
-function updatePublicAuthButtonsVisibility() {
+function updatePublicAuthButtonsVisibility(user = null) {
   const pathname = window.location.pathname;
   const { guestOnly, source } = getRouteHeaderMode(pathname);
-  const user = getStoredUser();
 
   let { loginBtn, signupBtn, navActions } = getNavRefs();
   if (!navActions && !loginBtn && !signupBtn) return;
@@ -125,13 +124,14 @@ function updatePublicAuthButtonsVisibility() {
 document.addEventListener("DOMContentLoaded", async () => {
   const pathname = window.location.pathname;
   const requiredRole = getRequiredRoleForPath(pathname);
+  let resolvedUser = null;
 
   if (requiredRole) {
-    await requireUser([requiredRole]);
+    resolvedUser = await requireUser([requiredRole]);
   } else {
-    await syncStoredUserWithSession();
+    resolvedUser = await syncStoredUserWithSession();
   }
 
-  applyRouteNavigationMode(getRouteHeaderMode(pathname), getStoredUser());
-  updatePublicAuthButtonsVisibility();
+  applyRouteNavigationMode(getRouteHeaderMode(pathname), resolvedUser);
+  updatePublicAuthButtonsVisibility(resolvedUser);
 });
