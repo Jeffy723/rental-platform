@@ -134,3 +134,11 @@ watchAuthState((user) => {
 });
 
 void loadNavbar();
+
+// If the user navigates using the Back/Forward buttons, the browser may restore
+// the page from bfcache without re-running module initialization. Re-render
+// the dashboard navbar on persisted page restores.
+window.addEventListener("pageshow", (event) => {
+  if (!event.persisted) return;
+  void loadNavbar();
+});

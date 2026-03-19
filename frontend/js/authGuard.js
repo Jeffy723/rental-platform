@@ -121,17 +121,36 @@ function updatePublicAuthButtonsVisibility(user = null) {
   if (signupBtn) signupBtn.style.display = user ? "none" : "";
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const pathname = window.location.pathname;
-  const requiredRole = getRequiredRoleForPath(pathname);
-  let resolvedUser = null;
+let bootstrapPromise = null;
 
-  if (requiredRole) {
-    resolvedUser = await requireUser([requiredRole]);
-  } else {
-    resolvedUser = await syncStoredUserWithSession();
-  }
+async function bootstrapHeader() {
+  if (bootstrapPromise) return bootstrapPromise;
+  bootstrapPromise = (async () => {
+    const pathname = window.location.pathname;
+    const requiredRole = getRequiredRoleForPath(pathname);
+    let resolvedUser = null;
 
-  applyRouteNavigationMode(getRouteHeaderMode(pathname), resolvedUser);
-  updatePublicAuthButtonsVisibility(resolvedUser);
+    if (requiredRole) {
+      resolvedUser = await requireUser([requiredRole]);
+    } else {
+      resolvedUser = await syncStoredUserWithSession();
+    }
+
+    applyRouteNavigationMode(getRouteHeaderMode(pathname), resolvedUser);
+    updatePublicAuthButtonsVisibility(resolvedUser);
+  })().finally(() => {
+    bootstrapPromise = null;
+  });
+
+  return bootstrapPromise;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  void bootstrapHeader();
+});
+
+// Handle bfcache restore (Back/Forward buttons) where DOMContentLoaded might not fire.
+window.addEventListener("pageshow", (event) => {
+  if (!event.persisted) return;
+  void bootstrapHeader();
 });

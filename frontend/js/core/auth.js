@@ -211,12 +211,13 @@ export async function syncStoredUserWithSession() {
     return localModeUser;
   }
 
-  if (!error) {
-    // No session and no error usually means "not bootstrapped yet".
-    // Keep the cached per-tab user instead of clearing it immediately.
-    const cached = getStoredUser();
-    if (cached) return cached;
+  // Important for Back/Forward restores (bfcache): Supabase's `getSession()`
+  // can temporarily return an error or null session even while the cached
+  // per-tab app user is still valid. Avoid clearing UI state in that case.
+  const cached = getStoredUser();
+  if (cached) return cached;
 
+  if (!error) {
     setStoredUser(null);
     return null;
   }
@@ -281,7 +282,8 @@ export function watchAuthState(onChange) {
 
     if (!activeSession?.user?.email) {
       const localModeUser = getLocalModeUser();
-      emitIfLatest(localModeUser || null);
+      const cachedUser = getStoredUser();
+      emitIfLatest(localModeUser || cachedUser || null);
       return;
     }
 
