@@ -114,10 +114,22 @@ async function renderNavbar(user) {
 
 async function loadNavbar() {
   const resolvedUser = await syncStoredUserWithSession();
-  await renderNavbar(resolvedUser || null);
+  bootstrapped = true;
+  const finalUser = queuedAuthUser !== undefined ? queuedAuthUser : resolvedUser;
+  queuedAuthUser = undefined;
+  await renderNavbar(finalUser || null);
 }
 
+let bootstrapped = false;
+let queuedAuthUser = undefined;
+
 watchAuthState((user) => {
+  // Avoid rendering a "logged out" or stale navbar before the initial
+  // syncStoredUserWithSession() bootstrap completes.
+  if (!bootstrapped) {
+    queuedAuthUser = user;
+    return;
+  }
   void renderNavbar(user || null);
 });
 

@@ -87,10 +87,6 @@ export function clearStoredUser() {
   sessionStorage.removeItem(SUPABASE_AUTH_STORAGE_KEY);
 }
 
-function shouldRetrySessionLookup() {
-  return Boolean(getStoredUser() || getSessionValue(SESSION_KEYS.authToken));
-}
-
 function wait(ms) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -98,7 +94,9 @@ function wait(ms) {
 }
 
 async function resolveSession({ retryIfStored = false } = {}) {
-  const delays = retryIfStored && shouldRetrySessionLookup() ? SESSION_RETRY_DELAYS_MS : [0];
+  // When a page reload happens, Supabase's session bootstrap can be slightly delayed.
+  // Retrying unconditionally (when requested) prevents a brief "logged out" flash.
+  const delays = retryIfStored ? SESSION_RETRY_DELAYS_MS : [0];
   let lastError = null;
 
   for (const delay of delays) {
@@ -214,6 +212,11 @@ export async function syncStoredUserWithSession() {
   }
 
   if (!error) {
+    // No session and no error usually means "not bootstrapped yet".
+    // Keep the cached per-tab user instead of clearing it immediately.
+    const cached = getStoredUser();
+    if (cached) return cached;
+
     setStoredUser(null);
     return null;
   }
