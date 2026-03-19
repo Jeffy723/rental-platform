@@ -1,4 +1,4 @@
-import { requireUser, syncStoredUserWithSession } from "./core/auth.js";
+import { requireUser, syncStoredUserWithSession, watchAuthState } from "./core/auth.js";
 
 const ROUTE_GUARDS = {
   "/dashboards/owner.html": "owner",
@@ -147,6 +147,13 @@ async function bootstrapHeader() {
 
 document.addEventListener("DOMContentLoaded", () => {
   void bootstrapHeader();
+});
+
+// Keep header state in sync when auth changes in another tab.
+watchAuthState((user) => {
+  const pathname = window.location.pathname;
+  applyRouteNavigationMode(getRouteHeaderMode(pathname), user);
+  updatePublicAuthButtonsVisibility(user);
 });
 
 // Handle bfcache restore (Back/Forward buttons) where DOMContentLoaded might not fire.

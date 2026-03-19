@@ -330,7 +330,7 @@ if (form) {
         }
       }
 
-      storeUserSession(authData.user, null, {
+      storeUserSession(authData.user, appUser, {
         mode: sessionMode,
         sessionToken: authData?.session?.access_token || ""
       });

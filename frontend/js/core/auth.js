@@ -23,16 +23,16 @@ function normalizeEmail(value) {
 }
 
 function getSessionValue(key) {
-  return sessionStorage.getItem(key);
+  return localStorage.getItem(key);
 }
 
 function setSessionValue(key, value) {
   if (value === null || value === undefined || value === "") {
-    sessionStorage.removeItem(key);
+    localStorage.removeItem(key);
     return;
   }
 
-  sessionStorage.setItem(key, String(value));
+  localStorage.setItem(key, String(value));
 }
 
 function getStoredSessionMode() {
@@ -56,7 +56,7 @@ export function getStoredUser() {
 
 function setStoredUser(user = null) {
   if (!user) {
-    sessionStorage.removeItem(SESSION_KEYS.appUser);
+    localStorage.removeItem(SESSION_KEYS.appUser);
     return;
   }
 
@@ -82,7 +82,7 @@ export function storeUserSession(authUser, appUser = null, { mode = getStoredSes
 
 export function clearStoredUser() {
   Object.values(SESSION_KEYS).forEach((key) => {
-    sessionStorage.removeItem(key);
+    localStorage.removeItem(key);
   });
 }
 
@@ -269,6 +269,23 @@ export function updateNavbarAuthState(root = document, user = null) {
 
 export function watchAuthState(onChange) {
   let authChangeSequence = 0;
+
+  const storageListener = async (event) => {
+    // Listen for auth/session updates from other tabs/windows.
+    if (
+      event.key === SUPABASE_AUTH_STORAGE_KEY ||
+      event.key === SESSION_KEYS.authToken ||
+      event.key === SESSION_KEYS.mode ||
+      event.key === SESSION_KEYS.appUser
+    ) {
+      const currentSequence = ++authChangeSequence;
+      const user = await syncStoredUserWithSession();
+      if (currentSequence !== authChangeSequence) return;
+      onChange(user);
+    }
+  };
+
+  window.addEventListener("storage", storageListener);
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     const currentSequence = ++authChangeSequence;
