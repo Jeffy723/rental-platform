@@ -2,6 +2,66 @@ import { syncStoredUserWithSession, watchAuthState } from "../js/core/auth.js";
 
 const navbarMarkupCache = new Map();
 let renderSequence = 0;
+const FALLBACK_NAVBAR_MARKUP = {
+  owner: `
+    <div class="app-nav">
+      <a class="app-brand" data-href="index.html">NestFinder</a>
+      <nav class="app-links" id="appNavLinks">
+        <a data-href="dashboards/owner.html">Dashboard</a>
+        <a data-href="pages/add-property.html">Add Property</a>
+        <a data-href="pages/agreements.html">Agreements</a>
+        <a data-href="pages/payments.html">Payments</a>
+        <a data-href="pages/maintenance.html">Maintenance</a>
+        <a data-href="pages/profile.html">Profile</a>
+      </nav>
+      <div class="app-user-actions">
+        <a class="app-avatar-btn" data-href="pages/profile.html" id="navProfileChip" title="View Profile">
+          <span class="app-avatar" id="navAvatar">?</span>
+          <span class="app-avatar-name" id="navUserName"></span>
+        </a>
+        <button class="app-nav-toggle" id="navToggle" aria-label="Toggle menu" type="button">&#9776;</button>
+      </div>
+    </div>
+  `,
+  tenant: `
+    <div class="app-nav">
+      <a class="app-brand" data-href="index.html">NestFinder</a>
+      <nav class="app-links" id="appNavLinks">
+        <a data-href="dashboards/tenant.html">Dashboard</a>
+        <a data-href="pages/browse-rentals.html">Browse Rentals</a>
+        <a data-href="pages/agreements.html">My Agreements</a>
+        <a data-href="pages/payments.html">Payments</a>
+        <a data-href="pages/maintenance.html">Maintenance</a>
+        <a data-href="pages/profile.html">Profile</a>
+      </nav>
+      <div class="app-user-actions">
+        <a class="app-avatar-btn" data-href="pages/profile.html" id="navProfileChip" title="View Profile">
+          <span class="app-avatar" id="navAvatar">?</span>
+          <span class="app-avatar-name" id="navUserName"></span>
+        </a>
+        <button class="app-nav-toggle" id="navToggle" aria-label="Toggle menu" type="button">&#9776;</button>
+      </div>
+    </div>
+  `,
+  admin: `
+    <div class="app-nav">
+      <a class="app-brand" data-href="index.html">NestFinder</a>
+      <nav class="app-links" id="appNavLinks">
+        <a data-href="dashboards/admin.html">Dashboard</a>
+        <a data-href="pages/property-list.html">Properties</a>
+        <a data-href="pages/agreements.html">Agreements</a>
+        <a data-href="pages/profile.html">Profile</a>
+      </nav>
+      <div class="app-user-actions">
+        <a class="app-avatar-btn" data-href="pages/profile.html" id="navProfileChip" title="View Profile">
+          <span class="app-avatar" id="navAvatar">?</span>
+          <span class="app-avatar-name" id="navUserName"></span>
+        </a>
+        <button class="app-nav-toggle" id="navToggle" aria-label="Toggle menu" type="button">&#9776;</button>
+      </div>
+    </div>
+  `
+};
 
 function getBasePrefix() {
   const path = window.location.pathname;
@@ -52,12 +112,12 @@ function wireHamburger(container) {
 
   toggle.addEventListener("click", () => {
     const isOpen = links.classList.toggle("nav-open");
-    toggle.textContent = isOpen ? "X" : "Menu";
+    toggle.innerHTML = isOpen ? "&times;" : "&#9776;";
     toggle.setAttribute("aria-expanded", String(isOpen));
   });
 }
 
-async function getNavbarMarkup(cacheKey) {
+async function getNavbarMarkup(cacheKey, role) {
   if (navbarMarkupCache.has(cacheKey)) {
     return navbarMarkupCache.get(cacheKey);
   }
@@ -70,7 +130,7 @@ async function getNavbarMarkup(cacheKey) {
 
   const response = await fetch(cacheKey);
   if (!response.ok) {
-    return "";
+    return FALLBACK_NAVBAR_MARKUP[role] || "";
   }
 
   const markup = await response.text();
@@ -92,7 +152,7 @@ async function renderNavbar(user) {
 
   const prefix = getBasePrefix();
   const cacheKey = `${prefix}${navbarPath}`;
-  const markup = await getNavbarMarkup(cacheKey);
+  const markup = await getNavbarMarkup(cacheKey, user?.role);
 
   if (currentRender !== renderSequence) return;
   if (!markup) {
