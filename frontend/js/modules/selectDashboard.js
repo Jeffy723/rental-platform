@@ -11,12 +11,15 @@ const saveUnifiedProfileBtn = document.getElementById("saveUnifiedProfileBtn");
 const profilePhoneInput = document.getElementById("profilePhone");
 const profileCityInput = document.getElementById("profileCity");
 
+// ─── Module-level user variable ───────────────────────────────
+let user = null;
+
 // Initialize with error handling
-(async () => {
+setTimeout(async () => {
   try {
     console.log("🟢 selectDashboard.js initializing...");
     
-    const user = await requireUser(["owner", "tenant", "admin"]);
+    user = await requireUser(["owner", "tenant", "admin"]);
     if (!user) {
       console.error("🔴 selectDashboard: User not authorized");
       throw new Error("Unauthorised");
@@ -40,7 +43,7 @@ const profileCityInput = document.getElementById("profileCity");
       hintEl.style.color = "var(--danger)";
     }
   }
-})();
+}, 100);
 
 function setLoading(button, loading, label) {
   if (!button) return;
