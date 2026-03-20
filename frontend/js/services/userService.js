@@ -129,7 +129,17 @@ export async function getAllUsers() {
     .select("user_id,name,email,role,created_at")
     .order("user_id", { ascending: true });
 
-  if (error || !users) return { data: null, error };
+  if (error) {
+    console.error("🔴 getAllUsers: Error fetching users", error);
+    return { data: null, error };
+  }
+  
+  if (!users) {
+    console.warn("🟡 getAllUsers: No users returned");
+    return { data: null, error: new Error("No users data") };
+  }
+  
+  console.log("🔵 getAllUsers: Fetched users, count:", users.length);
 
   const ownerUserIds = users.filter((item) => item.role === "owner").map((item) => item.user_id);
   const tenantUserIds = users.filter((item) => item.role === "tenant").map((item) => item.user_id);

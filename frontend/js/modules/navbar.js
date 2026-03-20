@@ -29,37 +29,51 @@ function getUserInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function isCurrentPage(href) {
+  const currentPath = window.location.pathname;
+  // Remove query params and hash from href for comparison
+  const hrefPath = href.replace(/^\.\.\//, "").replace(/^\.\//, "");
+  return currentPath.endsWith(hrefPath) || currentPath.endsWith("/" + hrefPath);
+}
+
 function getNavbarLinksForRole(role) {
   const prefix = getBasePrefix();
+  const links = [];
+  
   if (role === "admin") {
-    return `
-      <a href="${prefix}dashboards/admin.html">Dashboard</a>
-      <a href="${prefix}pages/property-list.html">Properties</a>
-      <a href="${prefix}pages/agreements.html">Agreements</a>
-      <a href="${prefix}pages/profile.html">Profile</a>
-    `;
+    links.push(
+      { text: "Dashboard", href: `${prefix}dashboards/admin.html` },
+      { text: "Properties", href: `${prefix}pages/property-list.html` },
+      { text: "Agreements", href: `${prefix}pages/agreements.html` },
+      { text: "Profile", href: `${prefix}pages/profile.html` }
+    );
   }
   if (role === "owner") {
-    return `
-      <a href="${prefix}dashboards/owner.html">Dashboard</a>
-      <a href="${prefix}pages/add-property.html">Add Property</a>
-      <a href="${prefix}pages/agreements.html">Agreements</a>
-      <a href="${prefix}pages/payments.html">Payments</a>
-      <a href="${prefix}pages/maintenance.html">Maintenance</a>
-      <a href="${prefix}pages/profile.html">Profile</a>
-    `;
+    links.push(
+      { text: "Dashboard", href: `${prefix}dashboards/owner.html` },
+      { text: "Add Property", href: `${prefix}pages/add-property.html` },
+      { text: "Agreements", href: `${prefix}pages/agreements.html` },
+      { text: "Payments", href: `${prefix}pages/payments.html` },
+      { text: "Maintenance", href: `${prefix}pages/maintenance.html` },
+      { text: "Profile", href: `${prefix}pages/profile.html` }
+    );
   }
   if (role === "tenant") {
-    return `
-      <a href="${prefix}dashboards/tenant.html">Dashboard</a>
-      <a href="${prefix}pages/browse-rentals.html">Browse Rentals</a>
-      <a href="${prefix}pages/agreements.html">My Agreements</a>
-      <a href="${prefix}pages/payments.html">Payments</a>
-      <a href="${prefix}pages/maintenance.html">Maintenance</a>
-      <a href="${prefix}pages/profile.html">Profile</a>
-    `;
+    links.push(
+      { text: "Dashboard", href: `${prefix}dashboards/tenant.html` },
+      { text: "Browse Rentals", href: `${prefix}pages/browse-rentals.html` },
+      { text: "My Agreements", href: `${prefix}pages/agreements.html` },
+      { text: "Payments", href: `${prefix}pages/payments.html` },
+      { text: "Maintenance", href: `${prefix}pages/maintenance.html` },
+      { text: "Profile", href: `${prefix}pages/profile.html` }
+    );
   }
-  return "";
+  
+  return links.map(link => {
+    const isActive = isCurrentPage(link.href);
+    const activeClass = isActive ? ' class="active"' : '';
+    return `<a href="${link.href}"${activeClass}>${link.text}</a>`;
+  }).join("");
 }
 
 function wireHamburger(container) {

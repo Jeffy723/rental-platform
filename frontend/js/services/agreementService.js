@@ -45,6 +45,17 @@ export async function listAgreements() {
     )
     .order("agreement_id", { ascending: false });
 
+  if (error) {
+    console.error("🔴 listAgreements: Error fetching agreements", error);
+    console.error("  Check foreign key constraint names in the select query");
+    return {
+      data: [],
+      error
+    };
+  }
+  
+  console.log("🔵 listAgreements: Fetched", (data || []).length, "agreements");
+  
   return {
     data: (data || []).map((item) => normalizeAgreementRecord(item)),
     error

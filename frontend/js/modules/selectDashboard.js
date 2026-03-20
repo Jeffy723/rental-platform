@@ -142,6 +142,7 @@ unifiedProfileForm?.addEventListener("submit", async (event) => {
 });
 
 async function switchMode(nextRole) {
+  console.log(`🔵 selectDashboard: Switching mode to ${nextRole}...`);
   setLoading(ownerBtn, true, "Owner Dashboard");
   setLoading(tenantBtn, true, "Tenant Dashboard");
 
@@ -153,30 +154,49 @@ async function switchMode(nextRole) {
       .select("user_id,name,email,role,auth_user_id,profile_completed")
       .single();
 
-    if (updateError || !updatedUser) {
+    if (updateError) {
+      console.error(`🔴 selectDashboard: Error updating role to ${nextRole}:`, updateError);
       throw new Error(updateError?.message || "Unable to switch account mode");
     }
+    
+    if (!updatedUser) {
+      console.error(`🔴 selectDashboard: No user returned after updating role`);
+      throw new Error("User data not returned from update");
+    }
+    
+    console.log(`🟢 selectDashboard: Role updated to ${nextRole}`);
 
     if (nextRole === "owner") {
       const { error: ownerError } = await supabaseClient
         .from("owners")
         .upsert({ user_id: user.user_id }, { onConflict: "user_id" });
-      if (ownerError) throw ownerError;
+      if (ownerError) {
+        console.error("🔴 selectDashboard: Error creating owner record:", ownerError);
+        throw ownerError;
+      }
+      console.log("🟢 selectDashboard: Owner record ensured");
     }
 
     if (nextRole === "tenant") {
       const { error: tenantError } = await supabaseClient
         .from("tenants")
         .upsert({ user_id: user.user_id }, { onConflict: "user_id" });
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error("🔴 selectDashboard: Error creating tenant record:", tenantError);
+        throw tenantError;
+      }
+      console.log("🟢 selectDashboard: Tenant record ensured");
     }
 
+    console.log("🟢 selectDashboard: Syncing auth session...");
     await syncStoredUserWithSession();
-
+    
+    console.log(`🟢 selectDashboard: Redirecting to ${nextRole} dashboard...`);
     window.location.href = nextRole === "owner"
       ? "/dashboards/owner.html"
       : "/dashboards/tenant.html";
   } catch (error) {
+    console.error("🔴 selectDashboard: Mode switch failed:", error.message, error);
     showToast(error.message || "Unable to open dashboard", "error");
     if (hintEl) hintEl.textContent = "Try again. If the issue continues, check table permissions in Supabase.";
     setLoading(ownerBtn, false, "Owner Dashboard");
