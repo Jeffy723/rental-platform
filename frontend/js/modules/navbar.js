@@ -1,50 +1,141 @@
 import { syncStoredUserWithSession, watchAuthState } from "../core/auth.js";
 
-function getDashboardPath(role) {
-  if (role === "admin") return "../dashboards/admin.html";
-  if (role === "owner" || role === "tenant") return "../pages/select-dashboard.html";
-  return "../index.html";
+function getBasePrefix() {
+  const path = window.location.pathname;
+  if (path.includes("/pages/") || path.includes("/dashboards/")) return "../";
+  return "./";
 }
 
-async function renderNavbar() {
-  const welcome = document.getElementById("welcomeUser");
-  const navRight = document.querySelector(".nav-right");
+function getUserInitials(name) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
-  if (!navRight) {
-    console.warn("Navbar container not found");
+function getNavbarLinksForRole(role) {
+  const prefix = getBasePrefix();
+  if (role === "admin") {
+    return `
+      <a href="${prefix}dashboards/admin.html">Dashboard</a>
+      <a href="${prefix}pages/property-list.html">Properties</a>
+      <a href="${prefix}pages/agreements.html">Agreements</a>
+      <a href="${prefix}pages/profile.html">Profile</a>
+    `;
+  }
+  if (role === "owner") {
+    return `
+      <a href="${prefix}dashboards/owner.html">Dashboard</a>
+      <a href="${prefix}pages/add-property.html">Add Property</a>
+      <a href="${prefix}pages/agreements.html">Agreements</a>
+      <a href="${prefix}pages/payments.html">Payments</a>
+      <a href="${prefix}pages/maintenance.html">Maintenance</a>
+      <a href="${prefix}pages/profile.html">Profile</a>
+    `;
+  }
+  if (role === "tenant") {
+    return `
+      <a href="${prefix}dashboards/tenant.html">Dashboard</a>
+      <a href="${prefix}pages/browse-rentals.html">Browse Rentals</a>
+      <a href="${prefix}pages/agreements.html">My Agreements</a>
+      <a href="${prefix}pages/payments.html">Payments</a>
+      <a href="${prefix}pages/maintenance.html">Maintenance</a>
+      <a href="${prefix}pages/profile.html">Profile</a>
+    `;
+  }
+  return "";
+}
+
+function wireHamburger(container) {
+  const toggle = container.querySelector("#navToggle");
+  const links = container.querySelector("#appNavLinks");
+  if (!toggle || !links) return;
+
+  toggle.addEventListener("click", () => {
+    const isOpen = links.classList.toggle("nav-open");
+    toggle.innerHTML = isOpen ? "&times;" : "&#9776;";
+    toggle.setAttribute("aria-expanded", String(isOpen));
+  });
+}
+
+let renderSequence = 0;
+
+async function renderNavbar() {
+  const container = document.getElementById("navbar");
+  if (!container) {
+    console.warn("Navbar container (id='navbar') not found");
     return;
   }
 
   const appUser = await syncStoredUserWithSession();
-  const email = appUser?.email || "";
+  const prefix = getBasePrefix();
+  const currentRender = ++renderSequence;
 
-  if (!email) {
-    navRight.innerHTML = `
-      <a href="../pages/login.html" class="btn btn-secondary">Login</a>
-      <a href="../pages/register.html" class="btn btn-primary">Register</a>
+  // If user is logged in, render full navbar with role-based links
+  if (appUser?.email) {
+    const navLinks = getNavbarLinksForRole(appUser.role);
+    const userInitials = getUserInitials(appUser.name || appUser.email);
+    
+    container.innerHTML = `
+      <div class="app-nav">
+        <a class="app-brand" href="${prefix}index.html">NestFinder</a>
+        <nav class="app-links" id="appNavLinks">
+          ${navLinks}
+        </nav>
+        <div class="app-user-actions">
+          <a class="app-avatar-btn" href="${prefix}pages/profile.html" id="navProfileChip" title="View Profile">
+            <span class="app-avatar" id="navAvatar">${userInitials}</span>
+            <span class="app-avatar-name" id="navUserName">${appUser.name || appUser.email}</span>
+          </a>
+          <button class="app-nav-toggle" id="navToggle" aria-label="Toggle menu" type="button">&#9776;</button>
+        </div>
+      </div>
     `;
-    if (welcome) welcome.textContent = "Welcome";
-    return;
+    
+    wireHamburger(container);
+  } else {
+    // If user is not logged in, render simple navbar with auth buttons
+    const navRight = container.querySelector(".nav-right");
+    if (navRight) {
+      navRight.innerHTML = `
+        <a href="${prefix}pages/login.html" class="btn btn-secondary">Login</a>
+        <a href="${prefix}pages/register.html" class="btn btn-primary">Register</a>
+      `;
+    } else {
+      // Fallback for public pages without nav-right class
+      container.innerHTML = `
+        <div class="app-nav">
+          <a class="app-brand" href="${prefix}index.html">NestFinder</a>
+          <div class="app-user-actions">
+            <a href="${prefix}pages/login.html" class="btn btn-secondary">Login</a>
+            <a href="${prefix}pages/register.html" class="btn btn-primary">Register</a>
+          </div>
+        </div>
+      `;
+    }
   }
 
-  if (welcome) {
-    welcome.textContent = appUser?.name
-      ? `Welcome, ${appUser.name}`
-      : "Welcome";
-  }
-
-  navRight.innerHTML = `
-    <a href="${getDashboardPath(appUser?.role)}" class="btn btn-secondary">Dashboard</a>
-    <a href="../pages/profile.html" class="btn btn-primary">Profile</a>
-  `;
+  // Prevent race condition where newer render completes after older one
+  if (currentRender !== renderSequence) return;
 }
 
-/* 🔥 FIX 1: wait for DOM */
-document.addEventListener("DOMContentLoaded", () => {
-  renderNavbar();
+let bootstrapped = false;
 
-  /* 🔥 FIX 2: react to auth changes */
-  watchAuthState(() => {
-    renderNavbar();
-  });
+document.addEventListener("DOMContentLoaded", async () => {
+  bootstrapped = true;
+  await renderNavbar();
+});
+
+// Re-render when auth state changes
+watchAuthState(() => {
+  if (bootstrapped) {
+    void renderNavbar();
+  }
+});
+
+// Re-render on page show (browser back/forward button)
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    void renderNavbar();
+  }
 });
