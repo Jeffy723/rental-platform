@@ -3,8 +3,25 @@ import { listAgreements } from "../services/agreementService.js";
 import { createMaintenanceRequest, listMaintenanceRequests, updateMaintenanceRequest } from "../services/maintenanceService.js";
 import { formatCurrency, formatDate, showToast } from "../utils/helpers.js";
 
-const user = await requireUser(["admin", "owner", "tenant"]);
-if (!user) throw new Error("Unauthorised");
+let user = null;
+
+// Initialize module with error handling
+setTimeout(async () => {
+  try {
+    console.log("🟢 maintenance.js: Initializing...");
+    
+    user = await requireUser(["admin", "owner", "tenant"]);
+    if (!user) {
+      console.error("🔴 maintenance.js: User not authorized");
+      throw new Error("Unauthorised");
+    }
+    
+    console.log("🟢 maintenance.js: Loaded successfully");
+  } catch (error) {
+    console.error("🔴 maintenance.js initialization error:", error);
+    showToast("Error loading maintenance: " + error.message, "error");
+  }
+}, 100);
 
 const requestForm = document.getElementById("requestForm");
 const agreementSelect = document.getElementById("agreementId");

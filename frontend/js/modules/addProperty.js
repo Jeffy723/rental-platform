@@ -4,25 +4,44 @@ import { validatePropertyPayload } from "../utils/validators.js";
 import { showToast } from "../utils/helpers.js";
 import supabaseClient from "../core/supabaseClient.js";
 
-const user = await requireUser(["owner"]);
-if (!user) throw new Error("Unauthorised");
+let user = null;
 
-const { data: profileStatus, error: profileStatusError } = await supabaseClient
-  .from("users")
-  .select("profile_completed")
-  .eq("user_id", user.user_id)
-  .maybeSingle();
+// Initialize module with error handling
+setTimeout(async () => {
+  try {
+    console.log("🟢 addProperty.js: Initializing...");
+    
+    user = await requireUser(["owner"]);
+    if (!user) {
+      console.error("🔴 addProperty.js: User not authorized");
+      throw new Error("Unauthorised");
+    }
+    
+    const { data: profileStatus, error: profileStatusError } = await supabaseClient
+      .from("users")
+      .select("profile_completed")
+      .eq("user_id", user.user_id)
+      .maybeSingle();
 
-if (profileStatusError) {
-  showToast("Unable to verify profile completion. Please try again.", "error");
-  throw profileStatusError;
-}
+    if (profileStatusError) {
+      console.error("🔴 addProperty.js: Profile error", profileStatusError);
+      showToast("Unable to verify profile completion. Please try again.", "error");
+      throw profileStatusError;
+    }
 
-if (!profileStatus?.profile_completed) {
-  showToast("Complete your profile first to add a property.", "warning");
-  window.location.href = "/dashboards/owner.html";
-  throw new Error("Profile incomplete");
-}
+    if (!profileStatus?.profile_completed) {
+      console.warn("🟡 addProperty.js: Profile incomplete");
+      showToast("Complete your profile first to add a property.", "warning");
+      window.location.href = "/dashboards/owner.html";
+      throw new Error("Profile incomplete");
+    }
+    
+    console.log("🟢 addProperty.js: Loaded successfully");
+  } catch (error) {
+    console.error("🔴 addProperty.js initialization error:", error);
+    showToast("Error loading page: " + error.message, "error");
+  }
+}, 100);
 
 // ── DOM refs ──────────────────────────────────────────────────
 const form             = document.getElementById("propertyForm");

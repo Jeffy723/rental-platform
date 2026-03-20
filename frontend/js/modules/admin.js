@@ -5,6 +5,8 @@ import { listProperties } from "../services/propertyService.js";
 import { listAgreements } from "../services/agreementService.js";
 import { showToast } from "../utils/helpers.js";
 
+let user = null;
+
 const statusEl = document.getElementById("adminDashboardStatus");
 const totalUsersEl = document.getElementById("adminTotalUsers");
 const activeProfilesEl = document.getElementById("adminActiveProfiles");
@@ -152,12 +154,15 @@ function renderApplicationsTable(applications) {
 }
 
 async function loadAdminDashboard() {
-  const user = await requireUser(["admin"]);
-  if (!user) return;
+  if (!user) {
+    console.error("🔴 admin.js: User not authenticated");
+    return;
+  }
 
   setDashboardStatus("Loading user, property, and agreement summaries...");
 
   try {
+    console.log("🔵 admin.js: Fetching data from Supabase...");
     const [usersResult, propertiesResult, agreementsResult, applicationsResult] = await Promise.all([
       getAllUsers(),
       listProperties(),
@@ -169,6 +174,8 @@ async function loadAdminDashboard() {
     const properties = extractData(propertiesResult);
     const agreements = extractData(agreementsResult);
     const applications = extractData(applicationsResult);
+    
+    console.log("🔵 admin.js: Data received", { users: users.length, properties: properties.length, agreements: agreements.length, applications: applications.length });
 
     const propertyCountsByUser = buildPropertyCountsByUser(properties);
     const agreementStatsByUser = buildAgreementStatsByUser(agreements);
@@ -190,17 +197,42 @@ async function loadAdminDashboard() {
     ].filter(Boolean);
 
     if (errors.length) {
+      console.error("🔴 admin.js: Database errors", errors);
+      errors.forEach((err, i) => {
+        console.error(`  Error ${i+1}:`, err.message || err);
+      });
       setDashboardStatus("Some admin summaries could not be loaded completely.");
       showToast(errors[0].message || "Some admin dashboard data could not be loaded.", "error");
       return;
     }
 
     setDashboardStatus(`Welcome back, ${user.name || "Admin"}. User, property, and agreement summaries are up to date.`);
+    console.log("🟢 admin.js: Dashboard loaded successfully");
   } catch (error) {
-    console.error("Admin dashboard load failed:", error);
+    console.error("🔴 admin.js: Dashboard load failed:", error);
+    console.error("  Error details:", error.message, error.stack);
     setDashboardStatus("Unable to load the admin dashboard right now.");
     showToast(error.message || "Failed to load admin dashboard", "error");
   }
 }
 
-await loadAdminDashboard();
+// Initialize dashboard with a small delay to let DOM settle
+setTimeout(async () => {
+  try {
+    console.log("🟢 admin.js: Initializing...");
+    
+    user = await requireUser(["admin"]);
+    if (!user) {
+      console.error("🔴 admin.js: User not authorized");
+      setDashboardStatus("Error: You are not authorized to view this dashboard");
+      throw new Error("Unauthorised");
+    }
+    
+    console.log("🟢 admin.js: User authorized, loading dashboard...");
+    await loadAdminDashboard();
+    console.log("🟢 admin.js: Loaded successfully");
+  } catch (error) {
+    console.error("🔴 admin.js initialization error:", error);
+    setDashboardStatus("Error initializing dashboard");
+  }
+}, 100);

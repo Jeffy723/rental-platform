@@ -181,7 +181,19 @@ function filterPropertiesByStatus(properties = [], status = "") {
 
 async function runPropertyListQuery(query, { status = "", limit = 0 } = {}) {
   const { data, error } = await query;
-  if (error) return { data: null, error };
+  
+  if (error) {
+    console.error("🔴 propertyService: Query error", error);
+    console.error("  Error details:", error.message, error.code, error.details);
+    return { data: null, error };
+  }
+  
+  if (!data) {
+    console.warn("🟡 propertyService: No data returned from query");
+    return { data: null, error: new Error("No property data") };
+  }
+  
+  console.log("🔵 propertyService: Query returned", data.length, "properties");
 
   const enrichedData = await augmentPropertyPipelineData(data || []);
   let properties = enrichedData.map((property) => normalizePropertyRecord(property));

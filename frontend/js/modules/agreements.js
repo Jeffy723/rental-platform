@@ -21,8 +21,25 @@ const AGREEMENT_STATUS = {
 const EDIT_REQUEST_KEY = "agreementEditRequests";
 const PROPERTY_ACTIVITY_KEY = "propertiesUpdatedAt";
 
-const user = await requireUser(["admin", "owner", "tenant"]);
-if (!user) throw new Error("Unauthorised");
+let user = null;
+
+// Initialize module with error handling
+setTimeout(async () => {
+  try {
+    console.log("🟢 agreements.js: Initializing...");
+    
+    user = await requireUser(["admin", "owner", "tenant"]);
+    if (!user) {
+      console.error("🔴 agreements.js: User not authorized");
+      throw new Error("Unauthorised");
+    }
+    
+    console.log("🟢 agreements.js: Loaded successfully");
+  } catch (error) {
+    console.error("🔴 agreements.js initialization error:", error);
+    showToast("Error loading agreements: " + error.message, "error");
+  }
+}, 100);
 
 const adminForm = document.getElementById("agreementForm");
 const propertySelect = document.getElementById("propertyId");

@@ -254,14 +254,19 @@ profileForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   await saveProfile();
 });
-logoutBtn?.addEventListener("click", () => {
+logoutBtn?.addEventListener("click",() => {
   void logout();
 });
 
-try {
-  await loadProfile();
-} catch (error) {
-  console.error("Profile load failed:", error);
-  showToast(error.message || "Unable to load profile", "error");
-  setEditMode(false);
-}
+// Initialize profile with error handling
+setTimeout(async () => {
+  try {
+    console.log("🟢 profile.js: Initializing...");
+    await loadProfile();
+    console.log("🟢 profile.js: Loaded successfully");
+  } catch (error) {
+    console.error("🔴 profile.js initialization error:", error);
+    showToast(error.message || "Unable to load profile", "error");
+    setEditMode(false);
+  }
+}, 100);

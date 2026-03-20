@@ -4,16 +4,33 @@ import { createApplication, listApplications } from "../services/applicationServ
 import { PROPERTY_IMAGE_PLACEHOLDER, listProperties } from "../services/propertyService.js";
 import { formatCurrency, showToast } from "../utils/helpers.js";
 
-const user = await requireUser(["tenant"]);
-if (!user) throw new Error("Unauthorised");
+let user = null;
+let canRequestAgreement = false;
 
-const { data: profileStatus, error: profileStatusError } = await supabaseClient
-  .from("users")
-  .select("profile_completed")
-  .eq("user_id", user.user_id)
-  .maybeSingle();
+// Initialize module with error handling
+setTimeout(async () => {
+  try {
+    console.log("🟢 browseRentals.js: Initializing...");
+    
+    user = await requireUser(["tenant"]);
+    if (!user) {
+      console.error("🔴 browseRentals.js: User not authorized");
+      throw new Error("Unauthorised");
+    }
 
-const canRequestAgreement = !profileStatusError && Boolean(profileStatus?.profile_completed);
+    const { data: profileStatus, error: profileStatusError } = await supabaseClient
+      .from("users")
+      .select("profile_completed")
+      .eq("user_id", user.user_id)
+      .maybeSingle();
+
+    canRequestAgreement = !profileStatusError && Boolean(profileStatus?.profile_completed);
+    console.log("🟢 browseRentals.js: Loaded successfully");
+  } catch (error) {
+    console.error("🔴 browseRentals.js initialization error:", error);
+    showToast("Error loading properties: " + error.message, "error");
+  }
+}, 100);
 
 const browseGrid = document.getElementById("browseRentalsGrid");
 const browseSummary = document.getElementById("browseSummary");
