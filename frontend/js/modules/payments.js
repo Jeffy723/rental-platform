@@ -11,8 +11,25 @@ import {
 } from "../services/paymentService.js";
 import { formatCurrency, formatDate, showToast } from "../utils/helpers.js";
 
-const user = await requireUser(["admin", "owner", "tenant"]);
-if (!user) throw new Error("Unauthorised");
+let user = null;
+
+// Initialize module with error handling
+setTimeout(async () => {
+  try {
+    console.log("🟢 payments.js: Initializing...");
+    
+    user = await requireUser(["admin", "owner", "tenant"]);
+    if (!user) {
+      console.error("🔴 payments.js: User not authorized");
+      throw new Error("Unauthorised");
+    }
+    
+    console.log("🟢 payments.js: Loaded successfully");
+  } catch (error) {
+    console.error("🔴 payments.js initialization error:", error);
+    showToast("Error loading payments: " + error.message, "error");
+  }
+}, 100);
 
 const paymentForm = document.getElementById("paymentForm");
 const agreementSelect = document.getElementById("agreementId");
