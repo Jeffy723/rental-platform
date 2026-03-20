@@ -14,26 +14,36 @@
   <div class="utility-bar" id="dashboardNavbar"></div>
 
   <main class="page-shell content-stack">
-    <section class="page-card content-stack">
-      <div class="panel-header">
+
+    <!-- Page Header -->
+    <section class="page-card" style="background:linear-gradient(135deg,#16a34a 0%,#0f766e 100%);border:none;padding:2rem 2.5rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <div>
-          <h1 class="section-title">Browse Rentals</h1>
-          <p class="section-subtitle">Tenant-only listing workspace for reviewing available rentals and contacting owners without dropping into the public discover flow.</p>
+          <p style="font-size:0.72rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:0.4rem">Tenant Workspace</p>
+          <h1 style="font-size:clamp(1.4rem,2.5vw,1.9rem);color:#fff;margin:0 0 0.3rem;line-height:1.2">Browse Rentals</h1>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.9rem;margin:0">Review available rentals and send interest requests directly to owners.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius-md);padding:0.75rem 1.1rem">
+          <span style="font-size:1.4rem">🔎</span>
+          <span style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.9)">Available Listings</span>
         </div>
       </div>
     </section>
 
-    <section class="page-card content-stack">
-      <div class="panel-header">
+    <!-- Listings -->
+    <section class="page-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.1rem;flex-wrap:wrap">
         <div>
-          <h2 class="section-title">Available Listings</h2>
-          <p class="section-subtitle" id="browseSummary">Loading current rentals...</p>
+          <h2 class="section-title" style="margin-bottom:0.2rem">Available Listings</h2>
+          <p class="section-subtitle" id="browseSummary" style="margin-bottom:0">Loading current rentals…</p>
         </div>
       </div>
       <div id="browseRentalsGrid" class="property-grid"></div>
     </section>
+
   </main>
 
+  <!-- Property Details Modal -->
   <section id="tenantPropertyDetailsModal" class="workspace-modal" hidden>
     <div class="workspace-modal__backdrop" data-close-tenant-modal="true"></div>
     <div class="workspace-modal__panel page-card">
@@ -42,7 +52,7 @@
           <h3 class="section-title">Property Details</h3>
           <p class="section-subtitle">Review the listing without leaving your tenant workspace.</p>
         </div>
-        <button class="btn btn-ghost" type="button" id="closeTenantPropertyModal">Close</button>
+        <button class="btn btn-ghost" type="button" id="closeTenantPropertyModal">✕ Close</button>
       </div>
       <div id="tenantPropertyDetailsBody" class="content-stack"></div>
     </div>

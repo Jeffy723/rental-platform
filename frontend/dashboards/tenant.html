@@ -23,9 +23,8 @@
     .dash-topbar-brand { font-size: 1.05rem; font-weight: 800; color: var(--text); letter-spacing: -0.04em; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
     .dash-topbar-brand:hover { color: var(--primary); }
     .dash-topbar-title { flex: 1; font-size: 0.875rem; color: var(--text-secondary); font-weight: 500; }
-    .dash-topbar-user { display: flex; align-items: center; gap: 0.65rem; }
-    .dash-topbar-avatar { width: 34px; height: 34px; border-radius: var(--radius-full); background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .dash-topbar-name { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+    .dash-topbar-user { display: flex; align-items: center; gap: 0.65rem; margin-left: auto; }
+    .dash-topbar-avatar { width: 34px; height: 34px; border-radius: var(--radius-full); background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: default; }
     .dash-overlay { position: fixed; inset: 0; z-index: 700; background: rgba(15,23,42,0.45); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
     .dash-overlay.is-open { opacity: 1; pointer-events: all; }
     .dash-drawer { position: fixed; top: 0; left: 0; bottom: 0; z-index: 800; width: 260px; background: var(--surface); border-right: 1px solid var(--line); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); overflow-y: auto; }
@@ -46,7 +45,6 @@
     .dash-nav-link.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
     .dash-nav-icon { font-size: 1rem; flex-shrink: 0; width: 20px; text-align: center; }
     .dash-nav-divider { height: 1px; background: var(--line); margin: 0.5rem 0; }
-    .dash-drawer-footer { padding: 0.75rem; border-top: 1px solid var(--line); flex-shrink: 0; }
     .dash-main { background: var(--bg); padding: 1.5rem; display: grid; gap: 1.25rem; align-content: start; flex: 1; }
     .dash-page-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .dash-page-header h1 { font-size: 1.35rem; margin-bottom: 0.2rem; }
@@ -64,7 +62,16 @@
     .dash-section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
     .dash-section-head h2 { font-size: 1rem; margin-bottom: 0.15rem; }
     .dash-section-head p { font-size: 0.82rem; color: var(--text-secondary); margin: 0; }
-    @media (max-width: 600px) { .dash-main { padding: 1rem; } .dash-topbar-name { display: none; } }
+
+    /* ── Table fixes ── */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .table-wrap th, .table-wrap td { padding: 0.7rem 1rem; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+    .table-wrap th { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); background: var(--surface-soft); }
+    .table-wrap tr:last-child td { border-bottom: none; }
+    .table-wrap tr:hover td { background: var(--surface-soft); }
+
+    @media (max-width: 600px) { .dash-main { padding: 1rem; } }
   </style>
 </head>
 <body class="app-body">
@@ -96,9 +103,7 @@
       <div class="dash-nav-section-label">Account</div>
       <a class="dash-nav-link" href="../pages/profile.html"><span class="dash-nav-icon">👤</span> Profile</a>
     </div>
-    <div class="dash-drawer-footer">
-      <a class="dash-nav-link" href="../pages/login.html"><span class="dash-nav-icon">🚪</span> Log out</a>
-    </div>
+    <!-- No footer logout — logout lives on the Profile page -->
   </nav>
 
   <div class="dash-layout">
@@ -111,9 +116,9 @@
         NestFinder
       </a>
       <span class="dash-topbar-title">Tenant Dashboard</span>
+      <!-- Removed: name text. Only avatar remains. -->
       <div class="dash-topbar-user">
-        <div class="dash-topbar-avatar" id="topbarAvatar">?</div>
-        <span class="dash-topbar-name" id="topbarName"></span>
+        <div class="dash-topbar-avatar" id="topbarAvatar" title="">?</div>
       </div>
     </header>
 
@@ -178,8 +183,9 @@
     const user = getStoredUser();
     if (user) {
       const initials = user.name ? user.name.trim().split(/\s+/).map(w=>w[0]).join("").toUpperCase().slice(0,2) : "?";
-      ["topbarAvatar","drawerAvatar"].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = initials; });
-      ["topbarName","drawerName"].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = user.name || user.email || ""; });
+      ["topbarAvatar","drawerAvatar"].forEach(id => { const el = document.getElementById(id); if(el) { el.textContent = initials; el.title = user.name || user.email || ""; } });
+      const drawerNameEl = document.getElementById("drawerName");
+      if (drawerNameEl) drawerNameEl.textContent = user.name || user.email || "";
     }
     const hamburger = document.getElementById("dashHamburger");
     const drawer    = document.getElementById("dashDrawer");

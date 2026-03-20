@@ -57,11 +57,9 @@ function renderEmptyRows(message, columns) {
 
 function ensureStatsRecord(targetMap, key) {
   if (!key) return null;
-
   if (!targetMap.has(key)) {
     targetMap.set(key, { total: 0, active: 0, pending: 0 });
   }
-
   return targetMap.get(key);
 }
 
@@ -117,7 +115,6 @@ function renderUsersTable(users, propertyCountsByUser, agreementStatsByUser) {
         return `
           <tr>
             <td>${escapeHtml(user.name || "-")}</td>
-            <td>${escapeHtml(user.role || "-")}</td>
             <td>${escapeHtml(user.email || "-")}</td>
             <td>${escapeHtml(contact)}</td>
             <td>${escapeHtml(user.city || "-")}</td>
@@ -128,7 +125,7 @@ function renderUsersTable(users, propertyCountsByUser, agreementStatsByUser) {
         `;
       })
       .join("")
-    : renderEmptyRows("Users will appear here after registration.", 8);
+    : renderEmptyRows("Users will appear here after registration.", 7);
 }
 
 function renderApplicationsTable(applications) {
@@ -155,7 +152,7 @@ async function loadAdminDashboard() {
   const user = await requireUser(["admin"]);
   if (!user) return;
 
-  setDashboardStatus("Loading user, property, and agreement summaries...");
+  setDashboardStatus("Loading summaries…");
 
   try {
     const [usersResult, propertiesResult, agreementsResult, applicationsResult] = await Promise.all([
@@ -190,12 +187,12 @@ async function loadAdminDashboard() {
     ].filter(Boolean);
 
     if (errors.length) {
-      setDashboardStatus("Some admin summaries could not be loaded completely.");
+      setDashboardStatus("Some summaries could not be loaded.");
       showToast(errors[0].message || "Some admin dashboard data could not be loaded.", "error");
       return;
     }
 
-    setDashboardStatus(`Welcome back, ${user.name || "Admin"}. User, property, and agreement summaries are up to date.`);
+    setDashboardStatus("All summaries loaded.");
   } catch (error) {
     console.error("Admin dashboard load failed:", error);
     setDashboardStatus("Unable to load the admin dashboard right now.");
