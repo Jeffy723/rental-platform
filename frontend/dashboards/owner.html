@@ -5,45 +5,379 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Owner Dashboard | NestFinder</title>
   <link rel="icon" href="/assets/icons/favicon.ico" type="image/x-icon">
+  <link rel="preload" href="/assets/css/style.css" as="style">
+  <link rel="preload" href="/assets/js/main.js" as="script">
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/forms.css" />
   <link rel="stylesheet" href="../css/dashboard.css" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    /* ── Dashboard shell ── */
+    .dash-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .dash-topbar {
+      grid-column: 1 / -1;
+      position: sticky;
+      top: 0;
+      z-index: 500;
+      height: var(--nav-height);
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      box-shadow: var(--shadow-xs);
+    }
+    .dash-topbar-brand {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.04em;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .dash-topbar-brand:hover { color: var(--primary); }
+    .dash-topbar-title {
+      flex: 1;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .dash-topbar-user {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .dash-topbar-avatar {
+      width: 34px; height: 34px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .dash-topbar-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Sidebar ── */
+    .dash-sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      padding: 1.5rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      position: sticky;
+      top: var(--nav-height);
+      height: calc(100vh - var(--nav-height));
+      overflow-y: auto;
+    }
+    .dash-sidebar-section {
+      padding: 0 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .dash-sidebar-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      padding: 0 0.65rem;
+      margin-bottom: 0.35rem;
+    }
+    .dash-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .dash-nav-link:hover {
+      background: var(--surface-soft);
+      color: var(--text);
+    }
+    .dash-nav-link.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .dash-nav-icon { font-size: 1rem; flex-shrink: 0; }
+    .dash-sidebar-divider {
+      height: 1px;
+      background: var(--line);
+      margin: 0.75rem 0.75rem;
+    }
+    .dash-sidebar-footer {
+      margin-top: auto;
+      padding: 0.75rem;
+      border-top: 1px solid var(--line);
+    }
+
+    /* ── Main content ── */
+    .dash-main {
+      background: var(--bg);
+      padding: 1.5rem;
+      display: grid;
+      gap: 1.25rem;
+      align-content: start;
+      min-width: 0;
+    }
+
+    /* ── Page header ── */
+    .dash-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .dash-page-header h1 {
+      font-size: 1.35rem;
+      margin-bottom: 0.2rem;
+    }
+    .dash-page-header p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* ── KPI cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1.25rem;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 0.5rem;
+    }
+    .kpi-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kpi-card-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .kpi-card-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+    }
+    .kpi-card-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .kpi-card-sub {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    /* ── Section card ── */
+    .dash-section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .dash-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.1rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+    .dash-section-head h2 {
+      font-size: 1rem;
+      margin-bottom: 0.15rem;
+    }
+    .dash-section-head p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .dash-section-body { padding: 1.1rem 1.25rem; }
+    .dash-section-body .table-wrap { margin: 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .dash-layout { grid-template-columns: 1fr; }
+      .dash-sidebar { display: none; }
+      .dash-main { padding: 1rem; }
+    }
+  </style>
 </head>
 <body class="app-body">
-  <div class="utility-bar" id="dashboardNavbar"></div>
 
-  <main class="dashboard-layout dashboard-layout--full">
-    <section class="dashboard-shell">
+  <div class="dash-layout">
 
-      <!-- ── KPI Stats ── -->
-      <section class="page-card">
-        <h1 class="section-title">Owner Dashboard</h1>
-        <div class="kpi-grid">
-          <article class="kpi-card metric-card"><p class="kpi-label">Total Properties</p><p class="kpi-value" id="ownerTotalProperties">0</p></article>
-          <article class="kpi-card metric-card"><p class="kpi-label">Active Agreements</p><p class="kpi-value" id="ownerActiveAgreements">0</p></article>
-          <article class="kpi-card metric-card"><p class="kpi-label">Monthly Income</p><p class="kpi-value" id="ownerMonthlyIncome">₹0</p></article>
-          <article class="kpi-card metric-card"><p class="kpi-label">Maintenance Requests</p><p class="kpi-value" id="ownerMaintenanceRequests">0</p></article>
-          <article class="kpi-card metric-card"><p class="kpi-label">Pending Payment Confirmations</p><p class="kpi-value" id="ownerRecentActivity">0</p></article>
+    <!-- ── Topbar ── -->
+    <header class="dash-topbar">
+      <a class="dash-topbar-brand" href="../index.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#4f46e5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        NestFinder
+      </a>
+      <span class="dash-topbar-title">Owner Dashboard</span>
+      <div class="dash-topbar-user">
+        <div class="dash-topbar-avatar" id="topbarAvatar">?</div>
+        <span class="dash-topbar-name" id="topbarName"></span>
+      </div>
+    </header>
+
+    <!-- ── Sidebar ── -->
+    <aside class="dash-sidebar">
+      <div class="dash-sidebar-section">
+        <p class="dash-sidebar-label">Main</p>
+        <a class="dash-nav-link active" href="../dashboards/owner.html">
+          <span class="dash-nav-icon">📊</span> Dashboard
+        </a>
+        <a class="dash-nav-link" href="../pages/add-property.html">
+          <span class="dash-nav-icon">➕</span> Add Property
+        </a>
+      </div>
+      <div class="dash-sidebar-divider"></div>
+      <div class="dash-sidebar-section">
+        <p class="dash-sidebar-label">Manage</p>
+        <a class="dash-nav-link" href="../pages/agreements.html">
+          <span class="dash-nav-icon">📄</span> Agreements
+        </a>
+        <a class="dash-nav-link" href="../pages/payments.html">
+          <span class="dash-nav-icon">💳</span> Payments
+        </a>
+        <a class="dash-nav-link" href="../pages/maintenance.html">
+          <span class="dash-nav-icon">🔧</span> Maintenance
+        </a>
+      </div>
+      <div class="dash-sidebar-divider"></div>
+      <div class="dash-sidebar-section">
+        <p class="dash-sidebar-label">Account</p>
+        <a class="dash-nav-link" href="../pages/profile.html">
+          <span class="dash-nav-icon">👤</span> Profile
+        </a>
+      </div>
+      <div class="dash-sidebar-footer">
+        <a class="dash-nav-link" href="../pages/login.html" id="sidebarLogout">
+          <span class="dash-nav-icon">🚪</span> Log out
+        </a>
+      </div>
+    </aside>
+
+    <!-- ── Main content ── -->
+    <main class="dash-main">
+
+      <!-- Page header -->
+      <div class="dash-page-header">
+        <div>
+          <h1>Overview</h1>
+          <p>Here's a summary of your properties and activity.</p>
         </div>
-      </section>
+        <a class="btn btn-primary btn-sm" href="../pages/add-property.html">+ Add Property</a>
+      </div>
 
-      <section id="ownerPropertiesSection" class="page-card content-stack">
-        <div class="panel-header">
-          <h2 class="section-title">My Properties</h2>
-          <p class="section-subtitle">Review, inspect, edit, and manage your listings. Availability now follows your live agreement status automatically.</p>
-          <div class="actions-row">
-            <a class="btn btn-secondary" href="../pages/add-property.html">Add Property</a>
+      <!-- KPI grid -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-head">
+            <span class="kpi-card-label">Properties</span>
+            <div class="kpi-card-icon" style="background:#e0e7ff">🏠</div>
           </div>
+          <div class="kpi-card-value" id="ownerTotalProperties">—</div>
+          <div class="kpi-card-sub">Total listings</div>
         </div>
+        <div class="kpi-card">
+          <div class="kpi-card-head">
+            <span class="kpi-card-label">Agreements</span>
+            <div class="kpi-card-icon" style="background:#dcfce7">📄</div>
+          </div>
+          <div class="kpi-card-value" id="ownerActiveAgreements">—</div>
+          <div class="kpi-card-sub">Active agreements</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-head">
+            <span class="kpi-card-label">Monthly Income</span>
+            <div class="kpi-card-icon" style="background:#fef9c3">💰</div>
+          </div>
+          <div class="kpi-card-value" id="ownerMonthlyIncome">—</div>
+          <div class="kpi-card-sub">This month</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-head">
+            <span class="kpi-card-label">Maintenance</span>
+            <div class="kpi-card-icon" style="background:#fee2e2">🔧</div>
+          </div>
+          <div class="kpi-card-value" id="ownerMaintenanceRequests">—</div>
+          <div class="kpi-card-sub">Open requests</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-head">
+            <span class="kpi-card-label">Pending Payments</span>
+            <div class="kpi-card-icon" style="background:#f3e8ff">⏳</div>
+          </div>
+          <div class="kpi-card-value" id="ownerRecentActivity">—</div>
+          <div class="kpi-card-sub">Awaiting confirmation</div>
+        </div>
+      </div>
 
-        <div id="propertyCards" class="properties-grid"></div>
-      </section>
-
-      <section class="page-card content-stack">
-        <div class="panel-header">
+      <!-- My Properties -->
+      <div class="dash-section">
+        <div class="dash-section-head">
           <div>
-            <h2 class="section-title">Tenant Interest Requests</h2>
-            <p class="section-subtitle">Review interested tenants, shortlist them, and select one candidate before admin prepares the agreement.</p>
+            <h2>My Properties</h2>
+            <p>Manage and monitor all your listed properties.</p>
+          </div>
+          <a class="btn btn-secondary btn-sm" href="../pages/add-property.html">Add Property</a>
+        </div>
+        <div class="dash-section-body">
+          <div id="propertyCards" class="properties-grid"></div>
+        </div>
+      </div>
+
+      <!-- Tenant Interest Requests -->
+      <div class="dash-section">
+        <div class="dash-section-head">
+          <div>
+            <h2>Tenant Interest Requests</h2>
+            <p>Review applicants and select a tenant for agreement preparation.</p>
           </div>
         </div>
         <div class="table-wrap">
@@ -61,17 +395,16 @@
             <tbody id="ownerApplicationsTable"></tbody>
           </table>
         </div>
-      </section>
+      </div>
 
-      <section class="page-card content-stack">
-        <div class="panel-header">
+      <!-- Payment Confirmations -->
+      <div class="dash-section">
+        <div class="dash-section-head">
           <div>
-            <h2 class="section-title">Payment Confirmations</h2>
-            <p class="section-subtitle">Confirm tenant-submitted rent receipts so your income view stays current.</p>
+            <h2>Payment Confirmations</h2>
+            <p>Confirm tenant rent submissions to keep your income records current.</p>
           </div>
-          <div class="actions-row">
-            <a class="btn btn-secondary" href="../pages/payments.html">Open Payments</a>
-          </div>
+          <a class="btn btn-secondary btn-sm" href="../pages/payments.html">View All</a>
         </div>
         <div class="table-wrap">
           <table>
@@ -88,82 +421,94 @@
             <tbody id="ownerPaymentsTable"></tbody>
           </table>
         </div>
-      </section>
+      </div>
 
-      <section id="ownerPropertyDetailsModal" class="workspace-modal" hidden>
-        <div class="workspace-modal__backdrop" data-close-owner-modal="true"></div>
-        <div class="workspace-modal__panel page-card">
-          <div class="workspace-modal__head">
-            <div>
-              <h3 class="section-title" id="ownerPropertyDetailsTitle">Property Details</h3>
-              <p class="section-subtitle">Detailed listing view inside your dashboard.</p>
-            </div>
-            <button class="btn btn-ghost" type="button" id="closeOwnerPropertyModal">Close</button>
-          </div>
-          <div id="ownerPropertyDetailsBody" class="content-stack"></div>
+    </main>
+  </div>
+
+  <!-- Modals (unchanged — logic depends on owner.js) -->
+  <section id="ownerPropertyDetailsModal" class="workspace-modal" hidden>
+    <div class="workspace-modal__backdrop" data-close-owner-modal="true"></div>
+    <div class="workspace-modal__panel page-card">
+      <div class="workspace-modal__head">
+        <div>
+          <h3 class="section-title" id="ownerPropertyDetailsTitle">Property Details</h3>
+          <p class="section-subtitle">Detailed listing view.</p>
         </div>
-      </section>
+        <button class="btn btn-ghost" type="button" id="closeOwnerPropertyModal">Close</button>
+      </div>
+      <div id="ownerPropertyDetailsBody" class="content-stack"></div>
+    </div>
+  </section>
 
-      <section id="ownerPropertyEditModal" class="workspace-modal" hidden>
-        <div class="workspace-modal__backdrop" data-close-owner-edit="true"></div>
-        <div class="workspace-modal__panel page-card">
-          <div class="workspace-modal__head">
-            <div>
-              <h3 class="section-title">Edit Property</h3>
-              <p class="section-subtitle">Update the listing details directly from the owner dashboard.</p>
-            </div>
-            <button class="btn btn-ghost" type="button" id="closeOwnerEditModal">Close</button>
-          </div>
-
-          <form id="ownerEditPropertyForm" class="form-grid">
-            <input id="editPropertyId" type="hidden" />
-            <div>
-              <label for="editPropertyTitle">Title</label>
-              <input id="editPropertyTitle" type="text" required />
-            </div>
-            <div>
-              <label for="editPropertyType">Property Type</label>
-              <input id="editPropertyType" type="text" required />
-            </div>
-            <div class="full">
-              <label for="editPropertyAddress">Address</label>
-              <input id="editPropertyAddress" type="text" required />
-            </div>
-            <div>
-              <label for="editPropertyCity">City</label>
-              <input id="editPropertyCity" type="text" required />
-            </div>
-            <div>
-              <label for="editPropertyRent">Monthly Rent</label>
-              <input id="editPropertyRent" type="number" min="0" required />
-            </div>
-            <div>
-              <label for="editPropertyStatus">Status</label>
-              <select id="editPropertyStatus" required>
-                <option value="Available">Available</option>
-                <option value="Reserved">Reserved</option>
-                <option value="Rented">Rented</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-            <div>
-              <label for="editPropertyArea">Area (sqft)</label>
-              <input id="editPropertyArea" type="number" min="0" />
-            </div>
-            <div class="full actions-row">
-              <button class="btn btn-primary" type="submit" id="saveOwnerEditBtn">Save Changes</button>
-              <button class="btn btn-secondary" type="button" id="cancelOwnerEditBtn">Cancel</button>
-            </div>
-          </form>
+  <section id="ownerPropertyEditModal" class="workspace-modal" hidden>
+    <div class="workspace-modal__backdrop" data-close-owner-edit="true"></div>
+    <div class="workspace-modal__panel page-card">
+      <div class="workspace-modal__head">
+        <div>
+          <h3 class="section-title">Edit Property</h3>
+          <p class="section-subtitle">Update listing details.</p>
         </div>
-      </section>
-
-    </section>
-  </main>
+        <button class="btn btn-ghost" type="button" id="closeOwnerEditModal">Close</button>
+      </div>
+      <form id="ownerEditPropertyForm" class="form-grid">
+        <input id="editPropertyId" type="hidden" />
+        <div>
+          <label for="editPropertyTitle">Title</label>
+          <input id="editPropertyTitle" type="text" required />
+        </div>
+        <div>
+          <label for="editPropertyType">Property Type</label>
+          <input id="editPropertyType" type="text" required />
+        </div>
+        <div class="full">
+          <label for="editPropertyAddress">Address</label>
+          <input id="editPropertyAddress" type="text" required />
+        </div>
+        <div>
+          <label for="editPropertyCity">City</label>
+          <input id="editPropertyCity" type="text" required />
+        </div>
+        <div>
+          <label for="editPropertyRent">Monthly Rent</label>
+          <input id="editPropertyRent" type="number" min="0" required />
+        </div>
+        <div>
+          <label for="editPropertyStatus">Status</label>
+          <select id="editPropertyStatus" required>
+            <option value="Available">Available</option>
+            <option value="Reserved">Reserved</option>
+            <option value="Rented">Rented</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label for="editPropertyArea">Area (sqft)</label>
+          <input id="editPropertyArea" type="number" min="0" />
+        </div>
+        <div class="full actions-row">
+          <button class="btn btn-primary" type="submit" id="saveOwnerEditBtn">Save Changes</button>
+          <button class="btn btn-secondary" type="button" id="cancelOwnerEditBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </section>
 
   <script type="module" src="../js/authGuard.js"></script>
   <script type="module" src="../js/modules/owner.js"></script>
   <script type="module" src="../js/modules/propertyList.js"></script>
   <script type="module" src="../components/navbar.js"></script>
+  <script src="/assets/js/main.js" defer></script>
+  <script type="module">
+    import { getStoredUser } from "../js/core/auth.js";
+    const user = getStoredUser();
+    if (user) {
+      const initials = user.name ? user.name.trim().split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0,2) : "?";
+      const avatarEl = document.getElementById("topbarAvatar");
+      const nameEl = document.getElementById("topbarName");
+      if (avatarEl) avatarEl.textContent = initials;
+      if (nameEl) nameEl.textContent = user.name || user.email || "";
+    }
+  </script>
 </body>
 </html>

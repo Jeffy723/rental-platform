@@ -1,41 +1,16 @@
 import { listProperties } from "../services/propertyService.js";
 import { formatCurrency, showToast } from "../utils/helpers.js";
 
-const recommendedGrid = document.getElementById("recommendedGrid");
 const newHomesGrid = document.getElementById("newHomesGrid");
 const popularLocations = document.getElementById("popularLocations");
-const homeSearch = document.getElementById("homeSearch");
-const searchResultsEl = document.getElementById("homeSearchResults");
-const heroSearchForm = document.getElementById("heroSearchForm");
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=900&q=80";
 const basePrefix = window.location.pathname.includes("/pages/") ? "../" : "./";
 const isDiscoverPage = window.location.pathname.endsWith("/pages/discover.html");
-let availablePropertyCache = null;
-let availablePropertyPromise = null;
+
 let locationChipsBound = false;
 
-if (!isDiscoverPage && heroSearchForm) {
-  heroSearchForm.remove();
-}
-
-if (!isDiscoverPage) {
-  [
-    document.getElementById("homeSearch"),
-    document.getElementById("homeCity"),
-    document.getElementById("homeStatus"),
-    document.getElementById("homeBudget")
-  ].filter(Boolean).forEach((element) => {
-    const wrapper = element.closest(".toolbar-item, .field, .form-field, .filter-field, .search-bar, .toolbar")
-      || element.parentElement;
-    if (wrapper && !wrapper.contains(recommendedGrid) && !wrapper.contains(newHomesGrid)) {
-      wrapper.remove();
-    } else {
-      element.remove();
-    }
-  });
-}
-
+// ── Property card renderer ──────────────────────────────────────
 function renderPropertyCard(property) {
   const image = property.property_images?.[0]?.image_url || FALLBACK_IMG;
   const ownerName = property.owners?.users?.name || "Owner";
@@ -59,12 +34,12 @@ function renderPropertyCard(property) {
       </div>
       <div class="property-body">
         <h4 class="property-title">${property.title || "Untitled listing"}</h4>
-        <p class="property-meta">${property.city || "-"}</p>
-        ${detailParts.length ? `<p class="property-meta property-specs">${detailParts.join(" | ")}</p>` : ""}
+        <p class="property-meta">📍 ${property.city || "-"}</p>
+        ${detailParts.length ? `<p class="property-meta property-specs">${detailParts.join(" · ")}</p>` : ""}
         <p class="property-rent"><strong>${formatCurrency(property.rent_amount)}</strong> <span>/ month</span></p>
-        <p class="property-meta">Listed by: ${ownerName}</p>
-        <div class="actions-row compact-actions" style="margin-top:0.6rem">
-          <a class="btn btn-primary" href="${viewUrl}">View</a>
+        <p class="property-meta" style="font-size:0.8rem">Listed by: ${ownerName}</p>
+        <div class="actions-row compact-actions">
+          <a class="btn btn-primary btn-sm" href="${viewUrl}">View details</a>
         </div>
       </div>
     </article>
@@ -73,24 +48,30 @@ function renderPropertyCard(property) {
 
 function emptyState(title, message) {
   return `
-    <div class="empty-state card">
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-state-icon">🏠</div>
       <h4>${title}</h4>
       <p>${message}</p>
+      <a class="btn btn-primary btn-sm" href="${basePrefix}pages/discover.html">Browse all listings</a>
     </div>
   `;
 }
 
+// ── Location chips ───────────────────────────────────────────────
+// FIX: On the home page, clicking a city chip navigates to discover.html
+// with the city as a URL param — instead of trying to filter on this page
+// (which has no filter inputs).
 function renderLocationChips(properties) {
   if (!popularLocations) return;
 
-  const countByCity = properties.reduce((accumulator, property) => {
+  const countByCity = properties.reduce((acc, property) => {
     const city = (property.city || "Other").trim();
-    accumulator[city] = (accumulator[city] || 0) + 1;
-    return accumulator;
+    acc[city] = (acc[city] || 0) + 1;
+    return acc;
   }, {});
 
   const topCities = Object.entries(countByCity)
-    .sort((left, right) => right[1] - left[1])
+    .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
   popularLocations.innerHTML = topCities.length
@@ -105,131 +86,90 @@ function renderLocationChips(properties) {
     popularLocations.addEventListener("click", (event) => {
       const chip = event.target.closest(".location-chip");
       if (!chip) return;
-      const cityInput = document.getElementById("homeCity");
-      if (!cityInput) return;
-      cityInput.value = chip.dataset.city || "";
-      void loadHomeListings();
+      const city = chip.dataset.city || "";
+      // Navigate to discover page with city pre-filled as a URL param
+      window.location.href = `${basePrefix}pages/discover.html?city=${encodeURIComponent(city)}`;
     });
     locationChipsBound = true;
   }
 }
 
-async function loadAvailablePropertyIndex(force = false) {
-  if (!force && availablePropertyCache) {
-    return { data: availablePropertyCache, error: null };
+// ── Hero featured listing ────────────────────────────────────────
+function populateHeroCard(properties) {
+  const featured = properties[0];
+  if (!featured) return;
+
+  const metaEl   = document.getElementById("heroFeaturedMeta");
+  const priceEl  = document.getElementById("heroFeaturedPrice");
+  const specsEl  = document.getElementById("heroFeaturedSpecs");
+
+  if (metaEl)  metaEl.textContent  = `${featured.title || "Available property"} · ${featured.city || ""}`;
+  if (priceEl) priceEl.innerHTML   = `${formatCurrency(featured.rent_amount)} <span>/ month</span>`;
+
+  if (specsEl) {
+    const parts = [];
+    if (featured.bedrooms  != null) parts.push(`🛏 ${featured.bedrooms}`);
+    if (featured.bathrooms != null) parts.push(`🚿 ${featured.bathrooms}`);
+    if (featured.area_sqft)         parts.push(`📐 ${featured.area_sqft} sqft`);
+    specsEl.innerHTML = parts.map(p => `<span class="hero-card-spec">${p}</span>`).join("");
   }
-
-  if (!force && availablePropertyPromise) {
-    return availablePropertyPromise;
-  }
-
-  availablePropertyPromise = listProperties({ status: "Available" }).then((result) => {
-    if (!result.error) {
-      availablePropertyCache = result.data || [];
-    }
-    return result;
-  }).finally(() => {
-    availablePropertyPromise = null;
-  });
-
-  return availablePropertyPromise;
 }
 
-async function loadRecommended(city, status, maxBudget) {
-  return listProperties({
-    city,
-    status: status || "Available",
-    maxBudget
-  });
+// ── Hero stats ───────────────────────────────────────────────────
+function populateHeroStats(properties) {
+  const statListings = document.getElementById("statListings");
+  const statCities   = document.getElementById("statCities");
+
+  if (statListings) statListings.textContent = properties.length;
+  if (statCities) {
+    const uniqueCities = new Set(properties.map(p => p.city).filter(Boolean));
+    statCities.textContent = uniqueCities.size;
+  }
 }
 
+// ── Main loader ──────────────────────────────────────────────────
 async function loadHomeListings() {
-  const city = document.getElementById("homeCity")?.value.trim() || "";
-  const status = document.getElementById("homeStatus")?.value || "";
-  const maxBudget = Number(document.getElementById("homeBudget")?.value || 0);
-  const usesDefaultRecommendationQuery = !city && !maxBudget && (!status || status === "Available");
+  const { data, error } = await listProperties({ status: "Available" });
 
-  const availablePromise = loadAvailablePropertyIndex();
-  const recommendedPromise = usesDefaultRecommendationQuery
-    ? availablePromise
-    : loadRecommended(city, status, maxBudget);
-
-  const [availableResult, recommendedResult] = await Promise.all([availablePromise, recommendedPromise]);
-
-  if (availableResult.error) {
-    if (recommendedGrid) {
-      recommendedGrid.innerHTML = emptyState("Failed to load properties", "Please try again.");
-    }
+  if (error) {
     if (newHomesGrid) {
-      newHomesGrid.innerHTML = emptyState("Failed to load properties", "Please try again.");
+      newHomesGrid.innerHTML = emptyState("Could not load listings", "Please check your connection and try again.");
     }
-    showToast(availableResult.error.message || "Failed to load properties", "error");
+    showToast(error.message || "Failed to load properties", "error");
     return;
   }
 
-  const availableData = availableResult.data || [];
-  const recommendedData = recommendedResult.error ? [] : (recommendedResult.data || []);
-  const newestData = availableData.slice(0, 6);
+  const properties = data || [];
 
-  renderLocationChips(availableData);
+  // Populate stats and featured card
+  populateHeroStats(properties);
+  populateHeroCard(properties);
 
-  if (recommendedGrid) {
-    recommendedGrid.innerHTML = recommendedResult.error
-      ? emptyState("Failed to load properties", "Please try again.")
-      : recommendedData.length
-        ? recommendedData.slice(0, 8).map(renderPropertyCard).join("")
-        : emptyState("No properties match these filters", "Try a different city or increase your budget.");
-  }
+  // Location chips
+  renderLocationChips(properties);
 
+  // New homes grid — show 6 most recent
   if (newHomesGrid) {
-    newHomesGrid.innerHTML = newestData.length
-      ? newestData.map(renderPropertyCard).join("")
-      : emptyState("No new homes yet", "Recently added listings will appear here.");
-  }
-
-  if (searchResultsEl) {
-    const filtersActive = Boolean(city || maxBudget || status);
-    searchResultsEl.hidden = !filtersActive;
-    if (filtersActive) {
-      searchResultsEl.innerHTML = recommendedData.length
-        ? `<h2 class="section-title">Search results</h2><div class="property-grid">${recommendedData.map(renderPropertyCard).join("")}</div>`
-        : emptyState("No results found", "Try a different city or increase your max budget.");
-    }
+    const newest = properties.slice(0, 6);
+    newHomesGrid.innerHTML = newest.length
+      ? newest.map(renderPropertyCard).join("")
+      : emptyState("No listings yet", "Be the first to list a property on NestFinder.");
   }
 }
 
-if (homeSearch) {
-  homeSearch.addEventListener("click", () => {
-    void loadHomeListings();
-  });
+// ── Discover page: apply URL city param to city input ────────────
+// This runs on discover.html when navigating from a location chip.
+if (isDiscoverPage) {
+  (function applyUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const city   = params.get("city")   || "";
+    const status = params.get("status") || "";
+    const budget = params.get("budget") || "";
+
+    if (city)   { const el = document.getElementById("homeCity");   if (el) el.value = city; }
+    if (status) { const el = document.getElementById("homeStatus"); if (el) el.value = status; }
+    if (budget) { const el = document.getElementById("homeBudget"); if (el) el.value = budget; }
+  })();
 }
-
-["homeCity", "homeBudget"].forEach((id) => {
-  document.getElementById(id)?.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    void loadHomeListings();
-  });
-});
-
-(function applyUrlParams() {
-  const params = new URLSearchParams(window.location.search);
-  const city = params.get("city") || "";
-  const status = params.get("status") || "";
-  const budget = params.get("budget") || "";
-
-  if (city) {
-    const element = document.getElementById("homeCity");
-    if (element) element.value = city;
-  }
-  if (status) {
-    const element = document.getElementById("homeStatus");
-    if (element) element.value = status;
-  }
-  if (budget) {
-    const element = document.getElementById("homeBudget");
-    if (element) element.value = budget;
-  }
-})();
 
 void loadHomeListings();
