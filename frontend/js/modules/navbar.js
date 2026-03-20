@@ -1,4 +1,4 @@
-import { syncStoredUserWithSession } from "../core/auth.js";
+import { syncStoredUserWithSession, watchAuthState } from "../core/auth.js";
 
 function getDashboardPath(role) {
   if (role === "admin") return "../dashboards/admin.html";
@@ -10,7 +10,10 @@ async function renderNavbar() {
   const welcome = document.getElementById("welcomeUser");
   const navRight = document.querySelector(".nav-right");
 
-  if (!navRight) return;
+  if (!navRight) {
+    console.warn("Navbar container not found");
+    return;
+  }
 
   const appUser = await syncStoredUserWithSession();
   const email = appUser?.email || "";
@@ -25,7 +28,9 @@ async function renderNavbar() {
   }
 
   if (welcome) {
-    welcome.textContent = appUser?.name ? `Welcome, ${appUser.name}` : "Welcome";
+    welcome.textContent = appUser?.name
+      ? `Welcome, ${appUser.name}`
+      : "Welcome";
   }
 
   navRight.innerHTML = `
@@ -34,4 +39,12 @@ async function renderNavbar() {
   `;
 }
 
-void renderNavbar();
+/* 🔥 FIX 1: wait for DOM */
+document.addEventListener("DOMContentLoaded", () => {
+  renderNavbar();
+
+  /* 🔥 FIX 2: react to auth changes */
+  watchAuthState(() => {
+    renderNavbar();
+  });
+});
