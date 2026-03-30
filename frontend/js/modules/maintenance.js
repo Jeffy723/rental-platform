@@ -48,8 +48,8 @@ function renderStatus(status) {
   if (normalized.includes("progress")) {
     return `<span class="status-live"><span class="status-dot status-dot--progress"></span>In Progress</span>`;
   }
-  if (normalized.includes("resolved")) {
-    return `<span class="status-live"><span class="status-dot status-dot--completed"></span>Resolved</span>`;
+  if (normalized.includes("completed") || normalized.includes("resolved")) {
+    return `<span class="status-live"><span class="status-dot status-dot--completed"></span>Completed</span>`;
   }
   return `<span class="status-live"><span class="status-dot status-dot--completed"></span>${value}</span>`;
 }
@@ -90,8 +90,8 @@ async function loadMaintenanceList() {
           <td>${renderStatus(row.status)}</td>
           <td>${formatCurrency(row.cost_estimate)}</td>
           <td>${user.role !== "tenant"
-            ? String(row.status || "").trim().toLowerCase() === "resolved"
-              ? "<span class='helper-text'>Resolved</span>"
+            ? String(row.status || "").trim().toLowerCase() === "completed"
+              ? "<span class='helper-text'>Completed</span>"
               : `<button class="btn btn-secondary resolveBtn" data-id="${row.request_id}">Resolve</button>`
             : "-"}</td>
         </tr>
@@ -155,7 +155,7 @@ requestTableBody.addEventListener("click", async (event) => {
   }
 
   const { error } = await updateMaintenanceRequest(id, {
-    status: "Resolved",
+    status: "Completed",
     cost_estimate: parsedCost
   });
 
@@ -165,7 +165,7 @@ requestTableBody.addEventListener("click", async (event) => {
     return;
   }
 
-  showToast("Maintenance request marked as resolved", "success");
+  showToast("Maintenance request marked as completed", "success");
   loadMaintenanceList();
 });
 
