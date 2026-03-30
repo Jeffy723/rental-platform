@@ -51,18 +51,22 @@ export async function listMaintenanceRequests() {
 }
 
 export async function createMaintenanceRequest(payload) {
-  return supabaseClient
+  const { data, error } = await supabaseClient
     .from("maintenance_requests")
     .insert([payload])
     .select()
     .single();
+
+  return { data, error };
 }
 
 export async function updateMaintenanceRequest(requestId, payload) {
-  return supabaseClient
+  const { data, error } = await supabaseClient
     .from("maintenance_requests")
     .update(payload)
     .eq("request_id", requestId)
     .select()
     .single();
+
+  return { data, error };
 }
